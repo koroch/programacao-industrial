@@ -13,29 +13,33 @@ import static view.Programacao.ultimoIdCliente;
  */
 public class Cliente {
     private int id;
-    private String nomeEmpresa;
+    private String nome;
     private String cidade;
     private Estado estado;
 
-    public Cliente(int id, String nomeEmpresa, String cidade, Estado estado) {
+    public Cliente(int id, String nome, String cidade, Estado estado) {
         this.id = id;
-        this.nomeEmpresa = nomeEmpresa;
+        this.nome = nome;
         this.cidade = cidade;
         this.estado = estado;
     }
 
-    public Cliente(String nomeEmpresa, String cidade, Estado estado) {
+    public Cliente(String nome, String cidade, Estado estado) {
         this.id = ultimoIdCliente + 1;
         ultimoIdCliente++;
-        this.nomeEmpresa = nomeEmpresa;
+        this.nome = nome;
         this.cidade = cidade;
         this.estado = estado;
     }
 
     public Cliente() {}
     
+    public Cliente getById(int id, List<Cliente> clientes){
+        return clientes.stream().filter(x -> x.getId() == id).findFirst().orElse(null);
+    }
+    
     public Cliente getByNameEmpresa(String nomeEmpresa, List<Cliente> clientes){
-        return clientes.stream().filter(x -> x.getNomeEmpresa().equals(nomeEmpresa)).findFirst().orElse(null);
+        return clientes.stream().filter(x -> x.getNome().equals(nomeEmpresa)).findFirst().orElse(null);
     }
 
     public int getId() {
@@ -46,12 +50,12 @@ public class Cliente {
         this.id = id;
     }
 
-    public String getNomeEmpresa() {
-        return nomeEmpresa;
+    public String getNome() {
+        return nome;
     }
 
-    public void setNomeEmpresa(String nomeEmpresa) {
-        this.nomeEmpresa = nomeEmpresa;
+    public void setNome(String nome) {
+        this.nome = nome;
     }
 
     public String getCidade() {
@@ -72,7 +76,7 @@ public class Cliente {
 
     @Override
     public String toString() {
-        return this.id+","+this.nomeEmpresa+","+this.cidade+","+this.estado;
+        return this.id+"|"+this.nome+"|"+this.cidade+"|"+this.estado;
     }
     
     

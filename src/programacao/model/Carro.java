@@ -4,6 +4,7 @@
  */
 package programacao.model;
 
+import java.util.List;
 import static view.Programacao.ultimoIdCarro;
 
 /**
@@ -31,6 +32,16 @@ public class Carro {
         this.placa = placa;
     }
 
+    public Carro() {}
+
+    public Carro getById(int id, List<Carro> carros){
+        return carros.stream().filter(x -> x.getId() == id).findFirst().orElse(null);
+    }
+    
+    public Carro getByName(String nome, List<Carro> carros){
+        return carros.stream().filter(x -> x.getNome().equals(nome)).findFirst().orElse(null);
+    }
+    
     public int getId() {
         return id;
     }
@@ -65,6 +76,6 @@ public class Carro {
     
     @Override
     public String toString() {
-        return this.id+","+this.nome+","+this.marca+","+this.placa;
+        return this.id+"|"+this.nome+"|"+this.marca+"|"+this.placa;
     }
 }

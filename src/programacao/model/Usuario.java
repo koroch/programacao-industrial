@@ -37,8 +37,12 @@ public class Usuario {
 
     public Usuario() {}
 
-    public Usuario getByName(String nome, List<Usuario> users){
-        return users.stream().filter(x -> x.getNome().equals(nome)).findFirst().orElse(null);
+    public Usuario getById(int id, List<Usuario> usuarios){
+        return usuarios.stream().filter(x -> x.getId() == id).findFirst().orElse(null);
+    }
+    
+    public Usuario getByNameDeGuerra(String nome, List<Usuario> users){
+        return users.stream().filter(x -> x.getNomeDeGuerra().equals(nome)).findFirst().orElse(null);
     }
     
     public int getId() {
@@ -79,7 +83,7 @@ public class Usuario {
     
     @Override
     public String toString() {
-        return this.id+","+this.nome+","+this.nomeDeGuerra+","+this.funcao+","+this.carteiraDeCarro;
+        return this.id+"|"+this.nome+"|"+this.nomeDeGuerra+"|"+this.funcao+"|"+this.carteiraDeCarro;
     }
     
     

@@ -14,7 +14,7 @@ import programacao.model.Carro;
 
 /**
  *
- * @author SGA
+ * @author Koroch
  */
 public class CadastroCarro extends javax.swing.JFrame {
     private static List<Carro> carrosCadastro = new ArrayList<>();
@@ -142,7 +142,7 @@ public class CadastroCarro extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jBLimpar);
-        jBLimpar.setBounds(280, 210, 90, 23);
+        jBLimpar.setBounds(280, 210, 90, 30);
 
         jTFNome.setToolTipText("Informe o nome ou como chamam o carro!");
         jTFNome.addActionListener(new java.awt.event.ActionListener() {
@@ -305,18 +305,6 @@ public class CadastroCarro extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTFNomeActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new CadastroCarro(carrosCadastro).setVisible(true);
-            }
-        });
-    }
-    
-    
     public boolean isStringValid(String string) {
         return string.matches("^[a-zA-ZÀ-ÿ]+( [a-zA-ZÀ-ÿ]+)*$");
     }

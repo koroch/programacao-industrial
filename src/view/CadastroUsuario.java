@@ -186,7 +186,7 @@ public class CadastroUsuario extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jBLimpar);
-        jBLimpar.setBounds(270, 210, 90, 23);
+        jBLimpar.setBounds(280, 210, 90, 40);
 
         jLFundo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/tela_de_fundo.jpeg"))); // NOI18N
         getContentPane().add(jLFundo);
@@ -326,16 +326,6 @@ public class CadastroUsuario extends javax.swing.JFrame {
         jRNao.setSelected(true);
     }//GEN-LAST:event_jBLimparActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new CadastroUsuario(usuariosCadastro).setVisible(true);
-            }
-        });
-    }
     
     public boolean isStringValid(String string) {
         return string.matches("^[a-zA-ZÀ-ÿ]+( [a-zA-ZÀ-ÿ]+)*$");

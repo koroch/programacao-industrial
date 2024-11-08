@@ -14,3 +14,10 @@ nb-configuration.xml
 *.jar
 *.war
 *.ear
+
+blocos.txt
+carros.txt
+clientes.txt
+demaisInfos.txt
+hoteis.txt
+usuarios.txt

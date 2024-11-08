@@ -130,7 +130,7 @@ public class CadastroCliente extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jBLimpar);
-        jBLimpar.setBounds(280, 210, 90, 23);
+        jBLimpar.setBounds(280, 210, 90, 30);
 
         jTFNome.setToolTipText("Informe o nome da empresa");
         jTFNome.addActionListener(new java.awt.event.ActionListener() {
@@ -184,7 +184,7 @@ public class CadastroCliente extends javax.swing.JFrame {
             return;
         
         for (Cliente x: aux) {
-            if(x.getNomeEmpresa().toUpperCase().equals(jTFNome.getText().toUpperCase())){
+            if(x.getNome().toUpperCase().equals(jTFNome.getText().toUpperCase())){
                 clientesCadastro.remove(x);
                 return;
             }
@@ -214,8 +214,8 @@ public class CadastroCliente extends javax.swing.JFrame {
             return;
         
         for (Cliente x: clientesCadastro) {
-            if(x.getNomeEmpresa().toUpperCase().equals(jTFNome.getText().toUpperCase())){
-                x.setNomeEmpresa(jTFNome.getText().toUpperCase());
+            if(x.getNome().toUpperCase().equals(jTFNome.getText().toUpperCase())){
+                x.setNome(jTFNome.getText().toUpperCase());
                 x.setCidade(jTFCidade.getText().toUpperCase());
                 x.setEstado(Estado.valueOf((String)jCBEstado.getSelectedItem()));
                 break;
@@ -244,8 +244,8 @@ public class CadastroCliente extends javax.swing.JFrame {
             return;
         }
         for (Cliente x: clientesCadastro) {
-            if(x.getNomeEmpresa().toUpperCase().contains(jTFNome.getText().toUpperCase())){
-                jTFNome.setText(x.getNomeEmpresa());
+            if(x.getNome().toUpperCase().contains(jTFNome.getText().toUpperCase())){
+                jTFNome.setText(x.getNome());
                 jTFCidade.setText(x.getCidade());
                 jCBEstado.setSelectedItem(String.valueOf(x.getEstado()));
                 break;
@@ -291,21 +291,9 @@ public class CadastroCliente extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
         }
     }//GEN-LAST:event_jBCriarEmpActionPerformed1
-
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new CadastroCliente(clientesCadastro).setVisible(true);
-            }
-        });
-    }
-    
     
     public boolean isStringValid(String string) {
-        return string.matches("^[a-zA-ZÀ-ÿ]+( [a-zA-ZÀ-ÿ]+)*$");
+        return string.matches("^[0-9a-zA-ZÀ-ÿ]+( [0-9a-zA-ZÀ-ÿ]+)*$");
     }
     
     public boolean validaNome(){
@@ -326,7 +314,7 @@ public class CadastroCliente extends javax.swing.JFrame {
     
     public boolean validaNomeUnico(){
         for (Cliente x: clientesCadastro) {
-            if(x.getNomeEmpresa().trim().toUpperCase().equals(jTFNome.getText().trim().toUpperCase())){
+            if(x.getNome().trim().toUpperCase().equals(jTFNome.getText().trim().toUpperCase())){
                 JOptionPane.showMessageDialog(null, "Nome já em uso! Crie com outro nome para não confundir!");
                 return false;
             }
