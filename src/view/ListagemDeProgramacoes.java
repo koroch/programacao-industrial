@@ -6,7 +6,10 @@ package view;
 
 import java.awt.Component;
 import java.awt.Font;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -60,7 +63,18 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
     }
     
     private void preencheCB(List<Bloco> blocos, List<DemaisInfos> demaisInfos){
-        Set<String> datasUnicas = Stream.concat(demaisInfos.stream().map(DemaisInfos::getDataProgramacao), blocos.stream().map(Bloco::getDataProgramacao)).collect(Collectors.toSet());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        Set<String> datasUnicas = Stream.concat(
+            demaisInfos.stream().map(DemaisInfos::getDataProgramacao),
+            blocos.stream().map(Bloco::getDataProgramacao)
+        )
+        .filter(data -> data != null && !data.isEmpty())
+        .map(data -> LocalDate.parse(data, formatter))
+        .sorted()
+        .map(formatter::format) 
+        .collect(Collectors.toCollection(LinkedHashSet::new)); 
+
         datasUnicas.forEach(jCBDatasUnicas::addItem);
     }
     
@@ -69,7 +83,6 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
 
         jLProg = new javax.swing.JLabel();
         jCB = new javax.swing.JPanel();
-        jBVerProgramacao = new javax.swing.JButton();
         jLProgramDia = new javax.swing.JLabel();
         jCBDatasUnicas = new javax.swing.JComboBox<>();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -84,7 +97,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jLProg.setForeground(new java.awt.Color(255, 255, 255));
         jLProg.setText("Visualizar Programações");
         getContentPane().add(jLProg);
-        jLProg.setBounds(520, 10, 350, 25);
+        jLProg.setBounds(500, 10, 350, 25);
 
         jCB.setBackground(new java.awt.Color(7, 30, 74));
         jCB.setToolTipText("");
@@ -93,17 +106,6 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jCB.setName(""); // NOI18N
         jCB.setLayout(null);
 
-        jBVerProgramacao.setBackground(new java.awt.Color(204, 204, 204));
-        jBVerProgramacao.setText("Ver");
-        jBVerProgramacao.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
-        jBVerProgramacao.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jBVerProgramacaoActionPerformed(evt);
-            }
-        });
-        jCB.add(jBVerProgramacao);
-        jBVerProgramacao.setBounds(780, 30, 110, 30);
-
         jLProgramDia.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLProgramDia.setForeground(new java.awt.Color(255, 255, 255));
         jLProgramDia.setText("Escolha a programação do dia desejado:");
@@ -111,8 +113,13 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jCB.add(jLProgramDia);
         jLProgramDia.setBounds(320, 10, 280, 16);
 
+        jCBDatasUnicas.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCBDatasUnicasActionPerformed(evt);
+            }
+        });
         jCB.add(jCBDatasUnicas);
-        jCBDatasUnicas.setBounds(320, 30, 440, 30);
+        jCBDatasUnicas.setBounds(320, 30, 570, 30);
 
         jTProgramação.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -171,11 +178,10 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jBVerProgramacaoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBVerProgramacaoActionPerformed
+    private void jCBDatasUnicasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCBDatasUnicasActionPerformed
         String dataEscolhida = String.valueOf(jCBDatasUnicas.getSelectedItem());
         populateTable(dataEscolhida);
-             
-    }//GEN-LAST:event_jBVerProgramacaoActionPerformed
+    }//GEN-LAST:event_jCBDatasUnicasActionPerformed
 
     public void populateTable(String dataEscolhida) {
         DefaultTableModel model = (DefaultTableModel) jTProgramação.getModel();
@@ -197,7 +203,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                 if(bloco.getProjeto()!=null&&!bloco.getProjeto().equals("")&&!bloco.getProjeto().equals("null")&&!bloco.getProjeto().equals("N/A")){
                     model.addRow(new Object[] { "Projeto: " + bloco.getProjeto() });
                 }
-                model.addRow(new Object[] { "Responsável do Trabalho: " + (bloco.getResponsavelDoTrabalho() != null ? bloco.getResponsavelDoTrabalho().getNome() : "N/A") });
+                model.addRow(new Object[] { "Responsável do Trabalho: " + (bloco.getResponsavelDoTrabalho() != null ? bloco.getResponsavelDoTrabalho().getNomeDeGuerra(): "N/A") });
                 model.addRow(new Object[] { "Carro: " + (bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A") + carretao });
                 model.addRow(new Object[] { "Data de Saída: " + bloco.getDataDeSaida() });
                 model.addRow(new Object[] { "Data de Retorno: " + bloco.getDataDeRetorno() });
@@ -212,7 +218,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                     model.addRow(new Object[] { "Janta: " + bloco.getJanta() });
                 }
                 if(bloco.getHospedagem() != null){
-                    model.addRow(new Object[] { "Hospedagem: " + (bloco.getHospedagem().getNome()) });
+                    model.addRow(new Object[] { "Hospedagem: " + (bloco.getHospedagem().getNomeComCidadeEEstado()) });
                 }
                 model.addRow(new Object[] { "" });
             });
@@ -241,7 +247,6 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jBVerProgramacao;
     private javax.swing.JPanel jCB;
     private javax.swing.JComboBox<String> jCBDatasUnicas;
     private javax.swing.JLabel jLFundo;
