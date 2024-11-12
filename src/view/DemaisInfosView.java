@@ -49,12 +49,13 @@ public class DemaisInfosView extends javax.swing.JFrame {
             
             linhasArquivoUser.forEach(elemento -> {
                 String[] dados = elemento.split("\\|");
+                int qtdArray = dados.length;
                 usuarios.add(new Usuario(
                     Integer.parseInt(dados[0].trim()),
                     dados[1].trim(),
                     dados[2].trim(),
                     dados[3].trim(),
-                    Boolean.parseBoolean(dados[4].trim())
+                    Boolean.parseBoolean((qtdArray >= 5 ? dados[4].trim() : "false"))
                 ));
             });
             
@@ -119,7 +120,7 @@ public class DemaisInfosView extends javax.swing.JFrame {
         setResizable(false);
         getContentPane().setLayout(null);
 
-        jDCDataProgramacao.setDate(new java.util.Date());
+        jDCDataProgramacao.setDate(new java.util.Date(new java.util.Date().getTime() + 86400000L));
         jDCDataProgramacao.setDateFormatString("dd/MM/yyyy");
         getContentPane().add(jDCDataProgramacao);
         jDCDataProgramacao.setBounds(160, 60, 350, 30);
