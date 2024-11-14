@@ -392,7 +392,7 @@
         <Component class="javax.swing.JButton" name="jBSub">
           <Properties>
             <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
-              <Font name="Segoe UI" size="8" style="1"/>
+              <Font name="Segoe UI" size="10" style="1"/>
             </Property>
             <Property name="text" type="java.lang.String" value="&lt;&lt;"/>
             <Property name="toolTipText" type="java.lang.String" value="Remove o colaborado"/>
@@ -419,7 +419,7 @@
         <Component class="javax.swing.JButton" name="jBAdd">
           <Properties>
             <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
-              <Font name="Segoe UI" size="8" style="1"/>
+              <Font name="Segoe UI" size="10" style="1"/>
             </Property>
             <Property name="text" type="java.lang.String" value="&gt;&gt;"/>
             <Property name="toolTipText" type="java.lang.String" value="Adiciona o colaborado"/>
@@ -533,7 +533,7 @@
           </Events>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-              <AbsoluteConstraints x="250" y="510" width="110" height="30"/>
+              <AbsoluteConstraints x="240" y="510" width="110" height="30"/>
             </Constraint>
           </Constraints>
         </Component>
@@ -554,7 +554,7 @@
           </Events>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-              <AbsoluteConstraints x="380" y="510" width="110" height="30"/>
+              <AbsoluteConstraints x="370" y="510" width="110" height="30"/>
             </Constraint>
           </Constraints>
         </Component>
@@ -575,7 +575,7 @@
           </Events>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-              <AbsoluteConstraints x="510" y="510" width="110" height="30"/>
+              <AbsoluteConstraints x="500" y="510" width="110" height="30"/>
             </Constraint>
           </Constraints>
         </Component>
@@ -596,7 +596,7 @@
           </Events>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-              <AbsoluteConstraints x="640" y="510" width="130" height="30"/>
+              <AbsoluteConstraints x="630" y="510" width="130" height="30"/>
             </Constraint>
           </Constraints>
         </Component>
@@ -784,6 +784,7 @@
                   <Format subtype="1" type="2"/>
                 </Property>
                 <Property name="horizontalAlignment" type="int" value="0"/>
+                <Property name="text" type="java.lang.String" value="13:00"/>
                 <Property name="toolTipText" type="java.lang.String" value="Hora:Minuto"/>
                 <Property name="name" type="java.lang.String" value="" noResource="true"/>
               </Properties>
@@ -805,6 +806,7 @@
                   <Format subtype="1" type="2"/>
                 </Property>
                 <Property name="horizontalAlignment" type="int" value="0"/>
+                <Property name="text" type="java.lang.String" value="07:30"/>
                 <Property name="toolTipText" type="java.lang.String" value="Hora:Minuto"/>
                 <Property name="name" type="java.lang.String" value="" noResource="true"/>
               </Properties>
@@ -826,6 +828,7 @@
                   <Format subtype="1" type="2"/>
                 </Property>
                 <Property name="horizontalAlignment" type="int" value="0"/>
+                <Property name="text" type="java.lang.String" value="17:18"/>
                 <Property name="toolTipText" type="java.lang.String" value="Hora:Minuto"/>
                 <Property name="name" type="java.lang.String" value="" noResource="true"/>
                 <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
@@ -850,6 +853,7 @@
                   <Format subtype="1" type="2"/>
                 </Property>
                 <Property name="horizontalAlignment" type="int" value="0"/>
+                <Property name="text" type="java.lang.String" value="12:00"/>
                 <Property name="toolTipText" type="java.lang.String" value="Hora:Minuto"/>
                 <Property name="name" type="java.lang.String" value="" noResource="true"/>
               </Properties>
@@ -1096,7 +1100,7 @@
           </Events>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-              <AbsoluteConstraints x="790" y="510" width="170" height="30"/>
+              <AbsoluteConstraints x="780" y="510" width="170" height="30"/>
             </Constraint>
           </Constraints>
         </Component>
@@ -1106,6 +1110,9 @@
               <Image iconType="3" name="/images/lupa.png"/>
             </Property>
             <Property name="toolTipText" type="java.lang.String" value="Clique aqui para procurar!"/>
+            <Property name="cursor" type="java.awt.Cursor" editor="org.netbeans.modules.form.editors2.CursorEditor">
+              <Color id="Hand Cursor"/>
+            </Property>
             <Property name="defaultCapable" type="boolean" value="false"/>
             <Property name="focusPainted" type="boolean" value="false"/>
             <Property name="focusable" type="boolean" value="false"/>

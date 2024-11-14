@@ -135,6 +135,9 @@
           <Image iconType="3" name="/images/lupa.png"/>
         </Property>
         <Property name="toolTipText" type="java.lang.String" value="Clique aqui para procurar pelo Nome ou Marca!"/>
+        <Property name="cursor" type="java.awt.Cursor" editor="org.netbeans.modules.form.editors2.CursorEditor">
+          <Color id="Hand Cursor"/>
+        </Property>
         <Property name="defaultCapable" type="boolean" value="false"/>
         <Property name="focusPainted" type="boolean" value="false"/>
         <Property name="focusable" type="boolean" value="false"/>

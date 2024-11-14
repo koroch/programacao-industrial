@@ -99,6 +99,7 @@ public class CadastroCliente extends javax.swing.JFrame {
 
         jBBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/lupa.png"))); // NOI18N
         jBBuscar.setToolTipText("Clique aqui para procurar!");
+        jBBuscar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jBBuscar.setDefaultCapable(false);
         jBBuscar.setFocusPainted(false);
         jBBuscar.setFocusable(false);
@@ -179,6 +180,7 @@ public class CadastroCliente extends javax.swing.JFrame {
 
     private void jBRemoverEmpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBRemoverEmpActionPerformed
         List<Cliente> aux = new ArrayList<>(clientesCadastro);
+        boolean exists = false;
         
         if(!validaNome())
             return;
@@ -186,9 +188,28 @@ public class CadastroCliente extends javax.swing.JFrame {
         for (Cliente x: aux) {
             if(x.getNome().toUpperCase().equals(jTFNome.getText().toUpperCase())){
                 clientesCadastro.remove(x);
+                JOptionPane.showMessageDialog(null, "Cliente removido com sucesso!");
                 return;
             }
         }
+        
+        if(!exists){
+            JOptionPane.showMessageDialog(null, "Não foi encontrado o cliente para remover!");
+            return;
+        }
+        
+        if(clientesCadastro.isEmpty()){
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("clientes.txt"))) {
+                writer.write("");
+                jTFNome.setText("");
+                jTFCidade.setText("");
+                jCBEstado.setSelectedIndex(0);
+                return;
+            } catch (IOException e ) {
+                JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
+            }
+        }
+        
         
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("clientes.txt"))) {
             for (Cliente cliente: clientesCadastro) {

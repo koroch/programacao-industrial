@@ -154,6 +154,7 @@ public class CadastroUsuario extends javax.swing.JFrame {
 
         jBBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/lupa.png"))); // NOI18N
         jBBuscar.setToolTipText("Clique aqui para procurar!");
+        jBBuscar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jBBuscar.setDefaultCapable(false);
         jBBuscar.setFocusPainted(false);
         jBBuscar.setFocusable(false);
@@ -206,6 +207,7 @@ public class CadastroUsuario extends javax.swing.JFrame {
 
     private void jBRemoverUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBRemoverUserActionPerformed
         List<Usuario> aux = new ArrayList<>(usuariosCadastro);
+        boolean exists = false;
         
         if(!validaNomeWar())
             return;
@@ -213,7 +215,27 @@ public class CadastroUsuario extends javax.swing.JFrame {
         for (Usuario x: aux) {
             if(x.getNomeDeGuerra().toUpperCase().equals(jTFNomeWar.getText().toUpperCase())){
                 usuariosCadastro.remove(x);
+                JOptionPane.showMessageDialog(null, "Colaborador removido com sucesso!");
                 return;
+            }
+        }
+        
+        if(!exists){
+            JOptionPane.showMessageDialog(null, "Não foi encontrado o colaborador para remover!");
+            return;
+        }
+        
+        if(usuariosCadastro.isEmpty()){
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("usuarios.txt"))) {
+                writer.write("");
+                JOptionPane.showMessageDialog(null, "Arquivo gravado com sucesso!");
+                jTFNome.setText("");
+                jTFNomeWar.setText("");
+                jTFFuncao.setText("");
+                jRNao.setSelected(true);
+                return;
+            } catch (IOException e ) {
+                JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
             }
         }
         
@@ -222,8 +244,6 @@ public class CadastroUsuario extends javax.swing.JFrame {
                 writer.write(usuario.toString());
                 writer.newLine();
             }
-            
-            JOptionPane.showMessageDialog(null, "Colaborador deletado com sucesso!", "Deleção", JOptionPane.WARNING_MESSAGE);
             jTFNome.setText("");
             jTFNomeWar.setText("");
             jTFFuncao.setText("");

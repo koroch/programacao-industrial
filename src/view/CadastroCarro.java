@@ -111,6 +111,7 @@ public class CadastroCarro extends javax.swing.JFrame {
 
         jBBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/lupa.png"))); // NOI18N
         jBBuscar.setToolTipText("Clique aqui para procurar pelo Nome ou Marca!");
+        jBBuscar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jBBuscar.setDefaultCapable(false);
         jBBuscar.setFocusPainted(false);
         jBBuscar.setFocusable(false);
@@ -182,6 +183,7 @@ public class CadastroCarro extends javax.swing.JFrame {
 
     private void jBRemoverUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBRemoverUserActionPerformed
         List<Carro> aux = new ArrayList<>(carrosCadastro);
+        boolean exists = false;
         
         if(!validaPlaca())
             return;
@@ -189,7 +191,25 @@ public class CadastroCarro extends javax.swing.JFrame {
         for (Carro x: aux) {
             if(x.getPlaca().toUpperCase().equals(jFTFPlaca.getText().toUpperCase())){
                 carrosCadastro.remove(x);
+                JOptionPane.showMessageDialog(null, "Carro removido com sucesso!");
                 return;
+            }
+        }
+        
+        if(!exists){
+            JOptionPane.showMessageDialog(null, "Não foi encontrado o carro para remover!");
+            return;
+        }
+        
+        if(carrosCadastro.isEmpty()){
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("carros.txt"))) {
+                writer.write("");
+                jTFNome.setText("");
+                jTFMarca.setText("");
+                jFTFPlaca.setText("");
+                return;
+            } catch (IOException e ) {
+                JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
             }
         }
         
@@ -251,7 +271,7 @@ public class CadastroCarro extends javax.swing.JFrame {
                 writer.newLine();
             }
             
-            JOptionPane.showMessageDialog(null, "Carro alterado com sucesso!", "Alteração", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Carro alterado com sucesso!");
             jTFNome.setText("");
             jTFMarca.setText("");
             jFTFPlaca.setText("");

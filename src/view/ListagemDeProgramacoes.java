@@ -111,7 +111,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jLProgramDia.setText("Escolha a programação do dia desejado:");
         jLProgramDia.setToolTipText("");
         jCB.add(jLProgramDia);
-        jLProgramDia.setBounds(320, 10, 280, 16);
+        jLProgramDia.setBounds(500, 10, 280, 16);
 
         jCBDatasUnicas.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -154,6 +154,14 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                 {null},
                 {null},
                 {null},
+                {null},
+                {null},
+                {null},
+                {null},
+                {null},
+                {null},
+                {null},
+                {null},
                 {null}
             },
             new String [] {
@@ -163,7 +171,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jScrollPane1.setViewportView(jTProgramação);
 
         jCB.add(jScrollPane1);
-        jScrollPane1.setBounds(160, 70, 880, 520);
+        jScrollPane1.setBounds(160, 70, 880, 490);
 
         getContentPane().add(jCB);
         jCB.setBounds(0, 40, 1200, 610);
@@ -172,9 +180,9 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jLFundo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/tela_de_fundo.jpeg"))); // NOI18N
         jLFundo.setToolTipText("");
         getContentPane().add(jLFundo);
-        jLFundo.setBounds(-50, -200, 1360, 1120);
+        jLFundo.setBounds(-50, -210, 1360, 1120);
 
-        setSize(new java.awt.Dimension(1209, 722));
+        setSize(new java.awt.Dimension(1209, 712));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -207,7 +215,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                 model.addRow(new Object[] { "Carro: " + (bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A") + carretao });
                 model.addRow(new Object[] { "Data de Saída: " + bloco.getDataDeSaida() });
                 model.addRow(new Object[] { "Data de Retorno: " + bloco.getDataDeRetorno() });
-                model.addRow(new Object[] { "Horário de Saída: " + bloco.getHorarioDeSaida() });
+                model.addRow(new Object[] { "Horário de Saída: " + bloco.getHorarioDeSaida() + "H"});
                 if(!("Horário de Trabalho: " + bloco.getHorarioDeTrabalhoInicio()+"H AS " + bloco.getHorarioDeTrabalhoFimMeioDia() +"Hs " + bloco.getHorarioDeTrabalhoInicioMeioDia() +"Hs AS " + bloco.getHorarioDeTrabalhoFim() +"Hs").equals("Horário de Trabalho: H AS Hs Hs AS Hs")){
                     model.addRow(new Object[] { "Horário de Trabalho: " + bloco.getHorarioDeTrabalhoInicio()+"H AS " + bloco.getHorarioDeTrabalhoFimMeioDia() +"Hs " + bloco.getHorarioDeTrabalhoInicioMeioDia() +"Hs AS " + bloco.getHorarioDeTrabalhoFim() +"Hs"});
                 }

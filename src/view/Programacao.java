@@ -129,8 +129,8 @@ public class Programacao extends javax.swing.JFrame {
                 usuarios.add(new Usuario(
                     Integer.parseInt(dados[0].trim()),
                     dados[1].trim(),
-                    dados[2].trim(),
-                    dados[3].trim(),
+                    (qtdArray >= 3 ? dados[2].trim() : null),
+                    (qtdArray >= 4 ? dados[3].trim() : null),
                     Boolean.parseBoolean((qtdArray >= 5 ? dados[4].trim() : "false"))
                 ));
             });
@@ -159,7 +159,7 @@ public class Programacao extends javax.swing.JFrame {
                 carros.add(new Carro(
                     Integer.parseInt(dados[0].trim()),
                     dados[1].trim(),
-                    dados[2].trim(),
+                    (qtdArray >= 3 ? dados[2].trim() : null),
                     (qtdArray >= 4 ? dados[3].trim() : null)    
                 ));
                 
@@ -279,6 +279,11 @@ public class Programacao extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Erro no arquivo blocos.txt, talvez ele ainda esteja vazio!");
         }
         
+        atualizarDemaisInfos();
+        
+    }
+    
+    private void atualizarDemaisInfos(){
         try (BufferedReader br = new BufferedReader(new FileReader("demaisInfos.txt"))) {
             String linha;
             while ((linha = br.readLine()) != null) {
@@ -290,15 +295,16 @@ public class Programacao extends javax.swing.JFrame {
                 Usuario usuarioHelper = new Usuario();
                 
                 int qtdArray = dados.length;
-                
-                demaisInfos.add(new DemaisInfos(
-                    Integer.parseInt(dados[0].trim()),
-                    dados[1].trim(),
-                    stringToUser(dados[2].trim(), usuarioHelper),
-                    stringToUser(dados[3].trim(), usuarioHelper),
-                    stringToUser(dados[4].trim(), usuarioHelper),
-                    (qtdArray >= 6 ? stringToUser(dados[5].trim(), usuarioHelper) : null)
-                ));
+                if(qtdArray > 1){
+                    demaisInfos.add(new DemaisInfos(
+                        Integer.parseInt(dados[0].trim()),
+                        dados[1].trim(),
+                        (qtdArray >= 3 ? stringToUser(dados[2].trim(), usuarioHelper) : null),
+                        (qtdArray >= 4 ? stringToUser(dados[3].trim(), usuarioHelper) : null),
+                        (qtdArray >= 5 ? stringToUser(dados[4].trim(), usuarioHelper) : null),
+                        (qtdArray >= 6 ? stringToUser(dados[5].trim(), usuarioHelper) : null)
+                    ));
+                }
             });
             
             if(!demaisInfos.isEmpty()){
@@ -315,12 +321,11 @@ public class Programacao extends javax.swing.JFrame {
         }
         String[] dadosUsers = dado.replace("[", "").replace("]", "").split(",");
         List<Usuario> users = Arrays.stream(dadosUsers)
-                          .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
-                          .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
-                          .collect(Collectors.toList());
+            .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
+            .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
+            .collect(Collectors.toList());
         return users;
     }
-    
     
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -492,7 +497,7 @@ public class Programacao extends javax.swing.JFrame {
         jCB.add(jSPSelecionados);
         jSPSelecionados.setBounds(410, 110, 170, 120);
 
-        jBSub.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
+        jBSub.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jBSub.setText("<<");
         jBSub.setToolTipText("Remove o colaborado");
         jBSub.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
@@ -509,7 +514,7 @@ public class Programacao extends javax.swing.JFrame {
         jCB.add(jBSub);
         jBSub.setBounds(350, 170, 50, 30);
 
-        jBAdd.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
+        jBAdd.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jBAdd.setText(">>");
         jBAdd.setToolTipText("Adiciona o colaborado");
         jBAdd.setBorder(javax.swing.BorderFactory.createCompoundBorder());
@@ -559,7 +564,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBAddBloco);
-        jBAddBloco.setBounds(250, 510, 110, 30);
+        jBAddBloco.setBounds(240, 510, 110, 30);
 
         jBAlterarBloco.setBackground(new java.awt.Color(204, 204, 204));
         jBAlterarBloco.setText("Alterar");
@@ -570,7 +575,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBAlterarBloco);
-        jBAlterarBloco.setBounds(380, 510, 110, 30);
+        jBAlterarBloco.setBounds(370, 510, 110, 30);
 
         jBRemover.setBackground(new java.awt.Color(204, 204, 204));
         jBRemover.setText("Remover");
@@ -581,7 +586,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBRemover);
-        jBRemover.setBounds(510, 510, 110, 30);
+        jBRemover.setBounds(500, 510, 110, 30);
 
         jBLimpar.setBackground(new java.awt.Color(204, 204, 204));
         jBLimpar.setText("❌ Limpar Campos");
@@ -592,7 +597,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBLimpar);
-        jBLimpar.setBounds(640, 510, 130, 30);
+        jBLimpar.setBounds(630, 510, 130, 30);
 
         jLDataSaida.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLDataSaida.setForeground(new java.awt.Color(255, 255, 255));
@@ -685,6 +690,7 @@ public class Programacao extends javax.swing.JFrame {
 
         jFTFHoraInicioTarde.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.DateFormatter(java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT))));
         jFTFHoraInicioTarde.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        jFTFHoraInicioTarde.setText("13:00");
         jFTFHoraInicioTarde.setToolTipText("Hora:Minuto");
         jFTFHoraInicioTarde.setName(""); // NOI18N
         jFTFHoraInicioTarde.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -712,6 +718,7 @@ public class Programacao extends javax.swing.JFrame {
 
         jFTFHoraInicioManha.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.DateFormatter(java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT))));
         jFTFHoraInicioManha.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        jFTFHoraInicioManha.setText("07:30");
         jFTFHoraInicioManha.setToolTipText("Hora:Minuto");
         jFTFHoraInicioManha.setName(""); // NOI18N
         jFTFHoraInicioManha.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -739,6 +746,7 @@ public class Programacao extends javax.swing.JFrame {
 
         jFTFHoraFimTarde.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.DateFormatter(java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT))));
         jFTFHoraFimTarde.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        jFTFHoraFimTarde.setText("17:18");
         jFTFHoraFimTarde.setToolTipText("Hora:Minuto");
         jFTFHoraFimTarde.setName(""); // NOI18N
         jFTFHoraFimTarde.setNextFocusableComponent(jBAddBloco);
@@ -767,6 +775,7 @@ public class Programacao extends javax.swing.JFrame {
 
         jFTFHoraFimManha.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.DateFormatter(java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT))));
         jFTFHoraFimManha.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        jFTFHoraFimManha.setText("12:00");
         jFTFHoraFimManha.setToolTipText("Hora:Minuto");
         jFTFHoraFimManha.setName(""); // NOI18N
         jFTFHoraFimManha.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -883,10 +892,11 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBDemaisInfos);
-        jBDemaisInfos.setBounds(790, 510, 170, 30);
+        jBDemaisInfos.setBounds(780, 510, 170, 30);
 
         jBBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/lupa.png"))); // NOI18N
         jBBuscar.setToolTipText("Clique aqui para procurar!");
+        jBBuscar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jBBuscar.setDefaultCapable(false);
         jBBuscar.setFocusPainted(false);
         jBBuscar.setFocusable(false);
@@ -1116,16 +1126,12 @@ public class Programacao extends javax.swing.JFrame {
                 demaisInfos.add(new DemaisInfos(
                     Integer.parseInt(dados[0].trim()),
                     dados[1].trim(),
-                    stringToUser(dados[2].trim(), usuarioHelper),
-                    stringToUser(dados[3].trim(), usuarioHelper),
-                    stringToUser(dados[4].trim(), usuarioHelper),
-                    (qtdArray >= 6 ? stringToUser(dados[5].trim(), usuarioHelper) : null)
+                    (qtdArray >= 3 ? stringToUser(dados[2].trim(), usuarioHelper): null),
+                    (qtdArray >= 4 ? stringToUser(dados[3].trim(), usuarioHelper): null),
+                    (qtdArray >= 5 ? stringToUser(dados[4].trim(), usuarioHelper): null),
+                    (qtdArray >= 6 ? stringToUser(dados[5].trim(), usuarioHelper): null)
                 ));
             });
-            
-            if(!demaisInfos.isEmpty()){
-                ultimoIdDemaisInfos = demaisInfos.getLast().getId();
-            }
         } catch (IOException e ) {
             JOptionPane.showMessageDialog(null, "Erro no arquivo demaisInfos.txt, talvez ele ainda esteja vazio!");
         }
@@ -1332,19 +1338,47 @@ public class Programacao extends javax.swing.JFrame {
 
     private void jBRemoverActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBRemoverActionPerformed
         boolean isVisitaComercial = validaVisitaComercial(); 
+        boolean exists = false;
         if(!isVisitaComercial && !validaOutros()){
             JOptionPane.showMessageDialog(null, "Dados insuficientes para Remover!\nSe for remoção de uma VISITA COMPERCIAL, preencha a DATA, a FINALIDADE 'VISITA COMERCIAL' e o CARRO.\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
             return;
         }
         String projeto = jFTFNumero.getText().equals("") ? null : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
-        for (Bloco x : blocos) {
+        List<Bloco> auxBlocos = new ArrayList<>(blocos);
+        for (Bloco x : auxBlocos) {
             if((x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))&& x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))&& x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)){
-            
-            
-            limpaCampos();
-            return;
+                blocos.remove(x);
+                JOptionPane.showMessageDialog(null, "Bloco de programação removido com sucesso!");
+                exists = true;
+                break;
             }
         }
+        
+        if(!exists){
+            JOptionPane.showMessageDialog(null, "Não foi encontrado o bloco para remover!");
+            return;
+        }
+        if(blocos.isEmpty()){
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("blocos.txt"))) {
+                writer.write("");
+                limpaCampos();
+            } catch (IOException e ) {
+                JOptionPane.showMessageDialog(null, "Erro ao deletar a programação!");
+            }
+        }
+        for (Bloco x : blocos) {
+            String nomesColabs =  x.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
+            String blocoSalvar = x.getId() +"|"+ x.getDataProgramacao() +"|"+ x.getProjeto()+"|"+ x.getCliente().getId() +"|"+ x.getFinalidade() +"|"+ nomesColabs +"|"+ x.getResponsavelDoTrabalho().getId() +"|"+ x.getCarro().getId() +"|"+ x.getCarretao() +"|"+ x.getDataDeSaida() +"|"+ x.getDataDeRetorno() +"|"+ x.getHorarioDeSaida() +"|"+ x.getHorarioDeTrabalhoInicio() +"|"+ x.getHorarioDeTrabalhoFimMeioDia() +"|"+ x.getHorarioDeTrabalhoInicioMeioDia() +"|"+ x.getHorarioDeTrabalhoFim() +"|"+ x.getAlmoco() +"|"+ x.getJanta() +"|"+ x.getHospedagem().getId();
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("blocos.txt"))) {
+                writer.write(blocoSalvar);
+                writer.newLine();
+                limpaCampos();
+            } catch (IOException e ) {
+                JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
+            }
+        }
+        limpaCampos();
     }//GEN-LAST:event_jBRemoverActionPerformed
 
     private void jBLimparActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBLimparActionPerformed
@@ -1564,7 +1598,7 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jMIListaProgramacoesActionPerformed
 
     private void jBDemaisInfosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBDemaisInfosActionPerformed
-        DemaisInfosView demaisInfosViw = new DemaisInfosView(demaisInfos, ultimoIdDemaisInfos);
+        DemaisInfosView demaisInfosViw = new DemaisInfosView(demaisInfos, blocos);
         demaisInfosViw.setVisible(true);
         
         demaisInfosViw.addWindowListener(new WindowAdapter() {
@@ -1576,7 +1610,7 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jBDemaisInfosActionPerformed
 
     private void jMIFolgasInternosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIFolgasInternosActionPerformed
-        DemaisInfosView demaisInfosViw = new DemaisInfosView(demaisInfos, ultimoIdDemaisInfos);
+        DemaisInfosView demaisInfosViw = new DemaisInfosView(demaisInfos, blocos);
         demaisInfosViw.setVisible(true);
         
         demaisInfosViw.addWindowListener(new WindowAdapter() {
@@ -1648,8 +1682,8 @@ public class Programacao extends javax.swing.JFrame {
             jCBCarro.setSelectedItem(x.getCarro().getNome());
             jCBCarretao.setSelectedItem(x.getCarretao());
             jCBHospedagem.setSelectedItem(x.getHospedagem()!=null?x.getHospedagem().getNomeComCidadeEEstado():"");
-            jTFAlmoco.setText(x.getAlmoco().equals("null")||x.getAlmoco()==null?"":x.getAlmoco());
-            jTFJanta.setText(x.getJanta().equals("null")||x.getJanta()==null?"":x.getJanta());
+            jTFAlmoco.setText(x.getAlmoco().equals("null")?"":x.getAlmoco());
+            jTFJanta.setText(x.getJanta().equals("null")?"":x.getJanta());
             jDCDataSaida.setDate(new SimpleDateFormat("dd/MM/yyyy").parse(x.getDataDeSaida()));
             jDCDataRetorno.setDate(new SimpleDateFormat("dd/MM/yyyy").parse(x.getDataDeRetorno()));
             jFTFHoraSaida.setText(x.getHorarioDeSaida());

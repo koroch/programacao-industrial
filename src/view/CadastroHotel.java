@@ -101,6 +101,7 @@ public class CadastroHotel extends javax.swing.JFrame {
 
         jBBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/lupa.png"))); // NOI18N
         jBBuscar.setToolTipText("Clique aqui para procurar!");
+        jBBuscar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jBBuscar.setDefaultCapable(false);
         jBBuscar.setFocusPainted(false);
         jBBuscar.setFocusable(false);
@@ -195,6 +196,7 @@ public class CadastroHotel extends javax.swing.JFrame {
 
     private void jBRemoverEmpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBRemoverEmpActionPerformed
         List<Hotel> aux = new ArrayList<>(hoteisCadastro);
+        boolean exists = false;
         
         if(!validaNome())
             return;
@@ -202,7 +204,27 @@ public class CadastroHotel extends javax.swing.JFrame {
         for (Hotel x: aux) {
             if(x.getNome().toUpperCase().equals(jTFNome.getText().toUpperCase())){
                 hoteisCadastro.remove(x);
+                JOptionPane.showMessageDialog(null, "Hotel removido com sucesso!");
                 return;
+            }
+        }
+        
+        if(!exists){
+            JOptionPane.showMessageDialog(null, "Não foi encontrado o hotel para remover!");
+            return;
+        }
+        
+        if(hoteisCadastro.isEmpty()){
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("hoteis.txt"))) {
+                writer.write("");
+                JOptionPane.showMessageDialog(null, "Arquivo gravado com sucesso!");
+                jTFNome.setText("");
+                jTFCidade.setText("");
+                jCBEstado.setSelectedIndex(0);
+                jTFEndereco.setText("");
+                return;
+            } catch (IOException e ) {
+                JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
             }
         }
         
@@ -211,7 +233,6 @@ public class CadastroHotel extends javax.swing.JFrame {
                 writer.write(hotel.toString());
                 writer.newLine();
             }
-            JOptionPane.showMessageDialog(null, "Hotel deletado com sucesso!", "Deleção", JOptionPane.WARNING_MESSAGE);
             jTFNome.setText("");
             jTFCidade.setText("");
             jCBEstado.setSelectedIndex(0);
