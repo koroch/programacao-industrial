@@ -21,12 +21,17 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
@@ -44,42 +49,45 @@ import javax.swing.text.MaskFormatter;
 import programacao.model.Bloco;
 import programacao.model.DemaisInfos;
 import programacao.model.Hotel;
+
 /**
  *
  * @author Koroch
  */
 public class Programacao extends javax.swing.JFrame {
+    private String dataSalva = "";
+    
     private List<String> linhasArquivoBlocoProgramacao = new ArrayList<>();
     private List<Bloco> blocos = new ArrayList<>();
     public static int ultimoIdBloco = 0;
-    
+
     private DefaultListModel<String> modeloSelec = new DefaultListModel<>();
     private DefaultListModel<String> listModel = new DefaultListModel<>();
     public static ImageIcon notificacaoIco = new ImageIcon("../images/notification.png");
-    
+
     private List<String> linhasArquivoUser = new ArrayList<>();
     private List<Usuario> usuarios = new ArrayList<>();
     public static int ultimoIdUser = 0;
-    
+
     private List<String> linhasArquivoCarro = new ArrayList<>();
     private List<Carro> carros = new ArrayList<>();
     public static int ultimoIdCarro = 0;
-    
+
     private List<String> linhasArquivoCliente = new ArrayList<>();
     private List<Cliente> clientes = new ArrayList<>();
     public static int ultimoIdCliente = 0;
-    
+
     private List<String> linhasArquivoHotel = new ArrayList<>();
     private List<Hotel> hoteis = new ArrayList<>();
     public static int ultimoIdHotel = 0;
-    
+
     private List<String> linhasArquivoDemaisInfos = new ArrayList<>();
     private List<DemaisInfos> demaisInfos = new ArrayList<>();
     public static int ultimoIdDemaisInfos = 0;
-    
+
     public Programacao() {
         try {
-            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");       
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
             // Configurando propriedades do Nimbus para JComboBox
             UIManager.put("ComboBox.background", Color.WHITE); // Cor de fundo
             UIManager.put("ComboBox.foreground", Color.BLACK); // Cor do texto
@@ -97,18 +105,23 @@ public class Programacao extends javax.swing.JFrame {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         initComponents();
+        jBAddRespOutro.setEnabled(false);
+        jBAddRespOutro.setVisible(false);
+        jTFRespOutro.setEnabled(false);
+        jTFRespOutro.setVisible(false);
+        dataSalva = jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate());
         
         DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.US);
         symbols.setGroupingSeparator('\0'); // Remove agrupamento de milhares
 
         // Define o formato para aceitar até 4 dígitos inteiros e até 2 dígitos decimais opcionalmente
         DecimalFormat decimalFormat = new DecimalFormat("####.##", symbols);
-        decimalFormat.setMinimumIntegerDigits(0); 
-        decimalFormat.setMaximumIntegerDigits(4);  
-        decimalFormat.setMinimumFractionDigits(1); 
-        decimalFormat.setMaximumFractionDigits(2);  
+        decimalFormat.setMinimumIntegerDigits(0);
+        decimalFormat.setMaximumIntegerDigits(4);
+        decimalFormat.setMinimumFractionDigits(1);
+        decimalFormat.setMaximumFractionDigits(2);
 
         NumberFormatter numberFormatter = new NumberFormatter(decimalFormat);
         numberFormatter.setAllowsInvalid(false); // Desabilita entradas inválidas
@@ -122,210 +135,215 @@ public class Programacao extends javax.swing.JFrame {
             while ((linha = br.readLine()) != null) {
                 linhasArquivoUser.add(linha);
             }
-            
+
             linhasArquivoUser.forEach(elemento -> {
                 String[] dados = elemento.split("\\|");
                 int qtdArray = dados.length;
                 usuarios.add(new Usuario(
-                    Integer.parseInt(dados[0].trim()),
-                    dados[1].trim(),
-                    (qtdArray >= 3 ? dados[2].trim() : null),
-                    (qtdArray >= 4 ? dados[3].trim() : null),
-                    Boolean.parseBoolean((qtdArray >= 5 ? dados[4].trim() : "false"))
+                        Integer.parseInt(dados[0].trim()),
+                        dados[1].trim(),
+                        (qtdArray >= 3 ? dados[2].trim() : null),
+                        (qtdArray >= 4 ? dados[3].trim() : null),
+                        Boolean.parseBoolean((qtdArray >= 5 ? dados[4].trim() : "false"))
                 ));
             });
-            
-            if(!usuarios.isEmpty()){
+
+            if (!usuarios.isEmpty()) {
                 ultimoIdUser = usuarios.getLast().getId();
+//                List<String> itensArray = listaDisponivelDoDia(jDCDataProgramacao);
                 String[] itensArray = usuarios.stream().map(Usuario::getNomeDeGuerra).sorted().toArray(String[]::new);
                 for (String item : itensArray) {
                     listModel.addElement(item);
                 }
                 jLColab.setModel(listModel);
             }
-        } catch (IOException e ) {
+        } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Erro no arquivo usuarios.txt, talvez ele ainda esteja vazio!");
         }
-        
+
         try (BufferedReader br = new BufferedReader(new FileReader("carros.txt"))) {
             String linha;
             while ((linha = br.readLine()) != null) {
                 linhasArquivoCarro.add(linha);
             }
-            
+
             linhasArquivoCarro.forEach(elemento -> {
                 String[] dados = elemento.split("\\|");
                 int qtdArray = dados.length;
                 carros.add(new Carro(
-                    Integer.parseInt(dados[0].trim()),
-                    dados[1].trim(),
-                    (qtdArray >= 3 ? dados[2].trim() : null),
-                    (qtdArray >= 4 ? dados[3].trim() : null)    
+                        Integer.parseInt(dados[0].trim()),
+                        dados[1].trim(),
+                        (qtdArray >= 3 ? dados[2].trim() : null),
+                        (qtdArray >= 4 ? dados[3].trim() : null)
                 ));
-                
+
             });
-            
-            if(!carros.isEmpty()){
+
+            if (!carros.isEmpty()) {
                 ultimoIdCarro = carros.getLast().getId();
-                carros.forEach(x -> {
-                    jCBCarro.addItem(x.getNome());
-                });
+                
+                String[] itensArray = carros.stream().map(Carro::getNome).sorted().toArray(String[]::new);
+                for (String item : itensArray) {
+                    jCBCarro.addItem(item);
+                }
             }
-        } catch (IOException e ) {
+        } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Erro no arquivo carros.txt, talvez ele ainda esteja vazio!");
         }
-        
+
         try (BufferedReader br = new BufferedReader(new FileReader("clientes.txt"))) {
             String linha;
             while ((linha = br.readLine()) != null) {
                 linhasArquivoCliente.add(linha);
             }
-            
+
             linhasArquivoCliente.forEach(elemento -> {
                 String[] dados = elemento.split("\\|");
                 clientes.add(new Cliente(
-                    Integer.parseInt(dados[0].trim()),
-                    dados[1].trim(),
-                    dados[2].trim(),
-                    Estado.valueOf(dados[3].trim())
+                        Integer.parseInt(dados[0].trim()),
+                        dados[1].trim(),
+                        dados[2].trim(),
+                        Estado.valueOf(dados[3].trim())
                 ));
-                
+
             });
-            
-            if(!clientes.isEmpty()){
+
+            if (!clientes.isEmpty()) {
                 ultimoIdCliente = clientes.getLast().getId();
-                clientes.forEach(x -> {
-                    jCBCliente.addItem(x.getNome());
-                });
+                 String[] itensArray = clientes.stream().map(Cliente::getNome).sorted().toArray(String[]::new);
+                for (String item : itensArray) {
+                    jCBCliente.addItem(item);
+                }
             }
-        } catch (IOException e ) {
+        } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Erro no arquivo clientes.txt, talvez ele ainda esteja vazio!");
         }
-        
+
         try (BufferedReader br = new BufferedReader(new FileReader("hoteis.txt"))) {
             String linha;
             while ((linha = br.readLine()) != null) {
                 linhasArquivoHotel.add(linha);
             }
-            
+
             linhasArquivoHotel.forEach(elemento -> {
                 String[] dados = elemento.split("\\|");
                 int qtdArray = dados.length;
                 hoteis.add(new Hotel(
-                    Integer.parseInt(dados[0].trim()),
-                    dados[1].trim(),
-                    dados[2].trim(),
-                    Estado.valueOf(dados[3].trim()),
-                    (qtdArray >= 5 ? dados[4].trim() : null)
+                        Integer.parseInt(dados[0].trim()),
+                        dados[1].trim(),
+                        dados[2].trim(),
+                        Estado.valueOf(dados[3].trim()),
+                        (qtdArray >= 5 ? dados[4].trim() : null)
                 ));
-                
+
             });
-            
-            if(!hoteis.isEmpty()){
+
+            if (!hoteis.isEmpty()) {
                 ultimoIdHotel = hoteis.getLast().getId();
                 hoteis.forEach(x -> {
                     jCBHospedagem.addItem(x.getNomeComCidadeEEstado());
                 });
             }
-        } catch (IOException e ) {
+        } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Erro no arquivo hoteis.txt, talvez ele ainda esteja vazio!");
         }
-        
+
         try (BufferedReader br = new BufferedReader(new FileReader("blocos.txt"))) {
             String linha;
             while ((linha = br.readLine()) != null) {
                 linhasArquivoBlocoProgramacao.add(linha);
             }
-            
+
             linhasArquivoBlocoProgramacao.forEach(elemento -> {
                 String[] dados = elemento.split("\\|");
-                
-                if(dados.length >= 6){
+
+                if (dados.length >= 6) {
                     String[] dados4Array = dados[5].trim().replace("[", "").replace("]", "").split(",");
                     Usuario usuarioHelper = new Usuario();
                     List<Usuario> listaDaEquipe = Arrays.stream(dados4Array)
-                                      .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
-                                      .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
-                                      .collect(Collectors.toList());
-
+                            .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
+                            .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
+                            .collect(Collectors.toList());
+                    int qtdArray = dados.length;
                     blocos.add(new Bloco(
-                        Integer.parseInt(dados[0].trim()),
-                        dados[1].trim(), //data
-                        dados[2].trim(), //proj
-                        dados[3].trim().equals("null")? null : new Cliente().getById(Integer.parseInt(dados[3].trim()), clientes), //client conv
-                        dados[4].trim(), // finalidade
-                        listaDaEquipe, //equipe
-                        usuarioHelper.getById(Integer.parseInt(dados[6].trim()), usuarios), //user resp
-                        dados[7].trim().equals("null")? null : new Carro().getById(Integer.parseInt(dados[7].trim()), carros), //carro
-                        dados[8].trim(), //carretao
-                        dados[9].trim(), //data
-                        dados[10].trim(), //data
-                        dados[11].trim(), //hora
-                        dados[12].trim(), //hora
-                        dados[13].trim(), //hora
-                        dados[14].trim(), //hora
-                        dados[15].trim(), //hora
-                        dados[16].trim(), //alm
-                        dados[17].trim(), //jan
-                        dados[18].trim().equals("null")? null : new Hotel().getById(Integer.parseInt(dados[18].trim()), hoteis) //hotel
+                            Integer.parseInt(dados[0].trim()),
+                            dados[1].trim(), //data
+                            dados[2].trim(), //proj
+                            dados[3].trim().equals("null") ? null : new Cliente().getById(Integer.parseInt(dados[3].trim()), clientes), //client conv
+                            dados[4].trim(), // finalidade
+                            listaDaEquipe, //equipe
+                            dados[6].trim().equals("null") ? null : usuarioHelper.getById(Integer.parseInt(dados[6].trim()), usuarios), //user resp
+                            dados[7].trim().equals("null") ? null : new Carro().getById(Integer.parseInt(dados[7].trim()), carros), //carro
+                            dados[8].trim(), //carretao
+                            dados[9].trim(), //data
+                            dados[10].trim(), //data
+                            dados[11].trim(), //hora
+                            dados[12].trim(), //hora
+                            dados[13].trim(), //hora
+                            dados[14].trim(), //hora
+                            dados[15].trim(), //hora
+                            dados[16].trim(), //alm
+                            dados[17].trim(), //jan
+                            dados[18].trim().equals("null") ? null : new Hotel().getById(Integer.parseInt(dados[18].trim()), hoteis), //hotel
+                            (qtdArray >= 20 ? dados[19].trim() : null)
                     ));
                 }
             });
-            
-            if(!blocos.isEmpty()){
+
+            if (!blocos.isEmpty()) {
                 ultimoIdBloco = blocos.getLast().getId();
             }
-        } catch (IOException e ) {
+        } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Erro no arquivo blocos.txt, talvez ele ainda esteja vazio!");
         }
         
         atualizarDemaisInfos();
-        
     }
-    
-    private void atualizarDemaisInfos(){
+
+    private void atualizarDemaisInfos() {
         try (BufferedReader br = new BufferedReader(new FileReader("demaisInfos.txt"))) {
             String linha;
             while ((linha = br.readLine()) != null) {
                 linhasArquivoDemaisInfos.add(linha);
             }
-            
+
             linhasArquivoDemaisInfos.forEach(elemento -> {
                 String[] dados = elemento.split("\\|");
                 Usuario usuarioHelper = new Usuario();
-                
+
                 int qtdArray = dados.length;
-                if(qtdArray > 1){
+                if (qtdArray > 1) {
                     demaisInfos.add(new DemaisInfos(
-                        Integer.parseInt(dados[0].trim()),
-                        dados[1].trim(),
-                        (qtdArray >= 3 ? stringToUser(dados[2].trim(), usuarioHelper) : null),
-                        (qtdArray >= 4 ? stringToUser(dados[3].trim(), usuarioHelper) : null),
-                        (qtdArray >= 5 ? stringToUser(dados[4].trim(), usuarioHelper) : null),
-                        (qtdArray >= 6 ? stringToUser(dados[5].trim(), usuarioHelper) : null)
+                            Integer.parseInt(dados[0].trim()),
+                            dados[1].trim(),
+                            (qtdArray >= 3 ? stringToUser(dados[2].trim(), usuarioHelper) : null),
+                            (qtdArray >= 4 ? stringToUser(dados[3].trim(), usuarioHelper) : null),
+                            (qtdArray >= 5 ? stringToUser(dados[4].trim(), usuarioHelper) : null),
+                            (qtdArray >= 6 ? stringToUser(dados[5].trim(), usuarioHelper) : null)
                     ));
                 }
             });
-            
-            if(!demaisInfos.isEmpty()){
+
+            if (!demaisInfos.isEmpty()) {
                 ultimoIdDemaisInfos = demaisInfos.getLast().getId();
             }
-        } catch (IOException e ) {
+        } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Erro no arquivo demaisInfos.txt, talvez ele ainda esteja vazio!");
         }
     }
-    
-    private List<Usuario> stringToUser(String dado, Usuario usuarioHelper){
-        if(dado == null || dado.equals("")){
+
+    private List<Usuario> stringToUser(String dado, Usuario usuarioHelper) {
+        if (dado == null || dado.equals("")) {
             return null;
         }
         String[] dadosUsers = dado.replace("[", "").replace("]", "").split(",");
         List<Usuario> users = Arrays.stream(dadosUsers)
-            .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
-            .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
-            .collect(Collectors.toList());
+                .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
+                .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
+                .collect(Collectors.toList());
         return users;
     }
+
     
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -349,7 +367,6 @@ public class Programacao extends javax.swing.JFrame {
         jBSub = new javax.swing.JButton();
         jBAdd = new javax.swing.JButton();
         jLResponsavel = new javax.swing.JLabel();
-        jCBResponsavel = new javax.swing.JComboBox<>();
         jLCarro = new javax.swing.JLabel();
         jCBCarro = new javax.swing.JComboBox<>();
         jBAddBloco = new javax.swing.JButton();
@@ -383,6 +400,11 @@ public class Programacao extends javax.swing.JFrame {
         jLCarretao = new javax.swing.JLabel();
         jBDemaisInfos = new javax.swing.JButton();
         jBBuscar = new javax.swing.JButton();
+        jLObservacoes = new javax.swing.JLabel();
+        jTFObservacoes = new javax.swing.JTextField();
+        jCBResponsavel = new javax.swing.JComboBox<>();
+        jTFRespOutro = new javax.swing.JTextField();
+        jBAddRespOutro = new javax.swing.JButton();
         jLFundo = new javax.swing.JLabel();
         jMenuBar = new javax.swing.JMenuBar();
         jMCadastros = new javax.swing.JMenu();
@@ -434,21 +456,21 @@ public class Programacao extends javax.swing.JFrame {
         jTFAlmoco.setToolTipText("Se houver, informe o local de almoço!");
         jTFAlmoco.setNextFocusableComponent(jTFJanta);
         jCB.add(jTFAlmoco);
-        jTFAlmoco.setBounds(500, 290, 500, 30);
+        jTFAlmoco.setBounds(500, 300, 500, 30);
 
         jLAlmoco.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLAlmoco.setForeground(new java.awt.Color(255, 255, 255));
         jLAlmoco.setText("Local de almoço:");
         jLAlmoco.setToolTipText("");
         jCB.add(jLAlmoco);
-        jLAlmoco.setBounds(410, 300, 80, 16);
+        jLAlmoco.setBounds(410, 310, 80, 16);
 
         jLHospedagem.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLHospedagem.setForeground(new java.awt.Color(255, 255, 255));
         jLHospedagem.setText("Hospedagem: ");
         jLHospedagem.setToolTipText("");
         jCB.add(jLHospedagem);
-        jLHospedagem.setBounds(410, 260, 90, 16);
+        jLHospedagem.setBounds(410, 270, 90, 16);
 
         jLCliente.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLCliente.setForeground(new java.awt.Color(255, 255, 255));
@@ -467,7 +489,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jCBHospedagem);
-        jCBHospedagem.setBounds(500, 250, 500, 30);
+        jCBHospedagem.setBounds(500, 260, 500, 30);
 
         jLColaboradores.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLColaboradores.setForeground(new java.awt.Color(255, 255, 255));
@@ -481,7 +503,7 @@ public class Programacao extends javax.swing.JFrame {
         jSPColaboradores.setViewportView(jLColab);
 
         jCB.add(jSPColaboradores);
-        jSPColaboradores.setBounds(160, 110, 180, 260);
+        jSPColaboradores.setBounds(160, 110, 180, 310);
 
         jLSelecionados.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLSelecionados.setForeground(new java.awt.Color(255, 255, 255));
@@ -537,11 +559,6 @@ public class Programacao extends javax.swing.JFrame {
         jCB.add(jLResponsavel);
         jLResponsavel.setBounds(610, 170, 160, 14);
 
-        jCBResponsavel.setToolTipText("Selecione o Responsável dentre os que vão para Obra!");
-        jCBResponsavel.setNextFocusableComponent(jCBCarro);
-        jCB.add(jCBResponsavel);
-        jCBResponsavel.setBounds(610, 190, 180, 30);
-
         jLCarro.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLCarro.setForeground(new java.awt.Color(255, 255, 255));
         jLCarro.setText("Selecione o Carro:");
@@ -564,7 +581,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBAddBloco);
-        jBAddBloco.setBounds(240, 510, 110, 30);
+        jBAddBloco.setBounds(240, 540, 110, 30);
 
         jBAlterarBloco.setBackground(new java.awt.Color(204, 204, 204));
         jBAlterarBloco.setText("Alterar");
@@ -575,7 +592,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBAlterarBloco);
-        jBAlterarBloco.setBounds(370, 510, 110, 30);
+        jBAlterarBloco.setBounds(370, 540, 110, 30);
 
         jBRemover.setBackground(new java.awt.Color(204, 204, 204));
         jBRemover.setText("Remover");
@@ -586,7 +603,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBRemover);
-        jBRemover.setBounds(500, 510, 110, 30);
+        jBRemover.setBounds(500, 540, 110, 30);
 
         jBLimpar.setBackground(new java.awt.Color(204, 204, 204));
         jBLimpar.setText("❌ Limpar Campos");
@@ -597,28 +614,28 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBLimpar);
-        jBLimpar.setBounds(630, 510, 130, 30);
+        jBLimpar.setBounds(630, 540, 130, 30);
 
         jLDataSaida.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLDataSaida.setForeground(new java.awt.Color(255, 255, 255));
         jLDataSaida.setText("Data de Saída:");
         jLDataSaida.setToolTipText("");
         jCB.add(jLDataSaida);
-        jLDataSaida.setBounds(250, 410, 90, 16);
+        jLDataSaida.setBounds(250, 450, 90, 16);
 
         jLDataRetorno.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLDataRetorno.setForeground(new java.awt.Color(255, 255, 255));
         jLDataRetorno.setText("Data de Retorno: ");
         jLDataRetorno.setToolTipText("");
         jCB.add(jLDataRetorno);
-        jLDataRetorno.setBounds(250, 450, 110, 16);
+        jLDataRetorno.setBounds(250, 490, 110, 16);
 
         jLHoraSaida.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLHoraSaida.setForeground(new java.awt.Color(255, 255, 255));
         jLHoraSaida.setText("Hora de Saída:");
         jLHoraSaida.setToolTipText("");
         jCB.add(jLHoraSaida);
-        jLHoraSaida.setBounds(490, 410, 90, 16);
+        jLHoraSaida.setBounds(490, 450, 90, 16);
 
         jFTFHoraSaida.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.DateFormatter(java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT))));
         jFTFHoraSaida.setHorizontalAlignment(javax.swing.JTextField.CENTER);
@@ -646,7 +663,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jFTFHoraSaida);
-        jFTFHoraSaida.setBounds(570, 400, 50, 30);
+        jFTFHoraSaida.setBounds(570, 440, 50, 30);
 
         jPanel1.setBackground(new java.awt.Color(0, 22, 90));
         jPanel1.setToolTipText("Defina o horário de trabalho, se for o caso.");
@@ -802,19 +819,19 @@ public class Programacao extends javax.swing.JFrame {
         jFTFHoraFimManha.setBounds(230, 20, 50, 30);
 
         jCB.add(jPanel1);
-        jPanel1.setBounds(660, 380, 290, 110);
+        jPanel1.setBounds(660, 420, 290, 110);
 
         jLJanta.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLJanta.setForeground(new java.awt.Color(255, 255, 255));
         jLJanta.setText("Local de janta:");
         jLJanta.setToolTipText("");
         jCB.add(jLJanta);
-        jLJanta.setBounds(410, 340, 80, 16);
+        jLJanta.setBounds(410, 350, 80, 16);
 
         jTFJanta.setToolTipText("Se houver, informe o local de almoço!");
         jTFJanta.setNextFocusableComponent(jFTFHoraSaida);
         jCB.add(jTFJanta);
-        jTFJanta.setBounds(500, 330, 500, 30);
+        jTFJanta.setBounds(500, 340, 500, 30);
 
         jCBCliente.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "N/A" }));
         jCBCliente.setToolTipText("Selecione o cliente. Caso não encontre, crie um para cada Fábrica!");
@@ -828,19 +845,24 @@ public class Programacao extends javax.swing.JFrame {
         jDCDataRetorno.setDateFormatString("dd/MM/yyyy");
         jDCDataRetorno.setNextFocusableComponent(jFTFHoraSaida);
         jCB.add(jDCDataRetorno);
-        jDCDataRetorno.setBounds(340, 440, 130, 30);
+        jDCDataRetorno.setBounds(340, 480, 130, 30);
 
         jDCDataSaida.setToolTipText("Dia/Mês/Ano");
         jDCDataSaida.setDate(new java.util.Date(new java.util.Date().getTime() + 86400000L));
         jDCDataSaida.setDateFormatString("dd/MM/yyyy");
         jDCDataSaida.setNextFocusableComponent(jDCDataRetorno);
         jCB.add(jDCDataSaida);
-        jDCDataSaida.setBounds(340, 400, 130, 30);
+        jDCDataSaida.setBounds(340, 440, 130, 30);
 
         jDCDataProgramacao.setToolTipText("Dia/Mês/Ano");
         jDCDataProgramacao.setDate(new java.util.Date(new java.util.Date().getTime() + 86400000L));
         jDCDataProgramacao.setDateFormatString("dd/MM/yyyy");
         jDCDataProgramacao.setNextFocusableComponent(jCBFinalidade);
+        jDCDataProgramacao.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                jDCDataProgramacaoPropertyChange(evt);
+            }
+        });
         jCB.add(jDCDataProgramacao);
         jDCDataProgramacao.setBounds(160, 40, 180, 30);
 
@@ -851,7 +873,7 @@ public class Programacao extends javax.swing.JFrame {
         jCB.add(jLProgramDia);
         jLProgramDia.setBounds(160, 20, 210, 14);
 
-        jCBFinalidade.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE", "ADEQUAÇÃO NR-12", "ELÉTRICA", "MECÂNICA", "LEVANTAMENTO TÉCNICO", "SPDA", "PASSAGEM DE TRABALHO", "VISITA COMERCIAL" }));
+        jCBFinalidade.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE", "OCULTAR", "ADEQUAÇÃO NR-12", "ELÉTRICA", "MECÂNICA", "LEVANTAMENTO TÉCNICO", "SPDA", "PASSAGEM DE TRABALHO", "VISITA COMERCIAL" }));
         jCBFinalidade.setToolTipText("Selecione a finalidade do bloco");
         jCBFinalidade.setNextFocusableComponent(jFTFNumero);
         jCBFinalidade.addActionListener(new java.awt.event.ActionListener() {
@@ -892,7 +914,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBDemaisInfos);
-        jBDemaisInfos.setBounds(780, 510, 170, 30);
+        jBDemaisInfos.setBounds(780, 540, 170, 30);
 
         jBBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/lupa.png"))); // NOI18N
         jBBuscar.setToolTipText("Clique aqui para procurar!");
@@ -919,8 +941,56 @@ public class Programacao extends javax.swing.JFrame {
         jCB.add(jBBuscar);
         jBBuscar.setBounds(950, 20, 50, 50);
 
+        jLObservacoes.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
+        jLObservacoes.setForeground(new java.awt.Color(255, 255, 255));
+        jLObservacoes.setText("Observações:");
+        jLObservacoes.setToolTipText("");
+        jCB.add(jLObservacoes);
+        jLObservacoes.setBounds(410, 390, 80, 16);
+
+        jTFObservacoes.setToolTipText("Se houver, informe o local de almoço!");
+        jTFObservacoes.setNextFocusableComponent(jFTFHoraSaida);
+        jCB.add(jTFObservacoes);
+        jTFObservacoes.setBounds(500, 380, 500, 30);
+
+        jCBResponsavel.setToolTipText("Selecione o Responsável dentre os que vão para Obra!");
+        jCBResponsavel.setNextFocusableComponent(jCBCarro);
+        jCBResponsavel.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCBResponsavelActionPerformed(evt);
+            }
+        });
+        jCB.add(jCBResponsavel);
+        jCBResponsavel.setBounds(610, 190, 180, 30);
+
+        jTFRespOutro.setEditable(false);
+        jTFRespOutro.setBackground(new java.awt.Color(204, 204, 204));
+        jTFRespOutro.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        jTFRespOutro.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        jTFRespOutro.setFocusable(false);
+        jTFRespOutro.setRequestFocusEnabled(false);
+        jCB.add(jTFRespOutro);
+        jTFRespOutro.setBounds(650, 220, 140, 20);
+
+        jBAddRespOutro.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
+        jBAddRespOutro.setText(">>");
+        jBAddRespOutro.setToolTipText("Adiciona o colaborado");
+        jBAddRespOutro.setBorder(javax.swing.BorderFactory.createCompoundBorder());
+        jBAddRespOutro.setFocusPainted(false);
+        jBAddRespOutro.setFocusable(false);
+        jBAddRespOutro.setRequestFocusEnabled(false);
+        jBAddRespOutro.setRolloverEnabled(false);
+        jBAddRespOutro.setVerifyInputWhenFocusTarget(false);
+        jBAddRespOutro.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBAddRespOutroActionPerformed(evt);
+            }
+        });
+        jCB.add(jBAddRespOutro);
+        jBAddRespOutro.setBounds(610, 220, 30, 20);
+
         getContentPane().add(jCB);
-        jCB.setBounds(0, 40, 1200, 570);
+        jCB.setBounds(0, 40, 1200, 580);
 
         jLFundo.setBackground(new java.awt.Color(51, 51, 51));
         jLFundo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/tela_de_fundo.jpeg"))); // NOI18N
@@ -1024,7 +1094,7 @@ public class Programacao extends javax.swing.JFrame {
     private void jMIUsersActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIUsersActionPerformed
         CadastroUsuario cadastroUser = new CadastroUsuario(usuarios);
         cadastroUser.setVisible(true);
-        
+
         cadastroUser.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -1036,7 +1106,7 @@ public class Programacao extends javax.swing.JFrame {
     private void jMICarrosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMICarrosActionPerformed
         CadastroCarro cadastroCarro = new CadastroCarro(carros);
         cadastroCarro.setVisible(true);
-        
+
         cadastroCarro.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -1048,7 +1118,7 @@ public class Programacao extends javax.swing.JFrame {
     private void jMIClienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIClienteActionPerformed
         CadastroCliente cadastroCliente = new CadastroCliente(clientes);
         cadastroCliente.setVisible(true);
-        
+
         cadastroCliente.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -1078,11 +1148,23 @@ public class Programacao extends javax.swing.JFrame {
             }
             jLColab.setModel(listModel);
         }
+        
+//        CadastroUsuario cadastroUser = new CadastroUsuario(usuarios);
+//        if (!cadastroUser.getListaAtualizadaUsuarios().isEmpty()) {
+//            ultimoIdUser = cadastroUser.getListaAtualizadaUsuarios().getLast().getId();
+//            List<String> itensNaoUsados = listaDisponivelDoDia(jDCDataProgramacao);
+//            System.out.println(itensNaoUsados);
+//            listModel.removeAllElements();
+//            for (String item : itensNaoUsados) {
+//                listModel.addElement(item);
+//            }
+//            jLColab.setModel(listModel);
+//        }
     }
-    
-    private void atualizarListas(){
+
+    private void atualizarListas() {
         CadastroCliente cadastroCliente = new CadastroCliente(clientes);
-        if(!cadastroCliente.getListaAtualizadaClientes().isEmpty()){
+        if (!cadastroCliente.getListaAtualizadaClientes().isEmpty()) {
             ultimoIdCliente = cadastroCliente.getListaAtualizadaClientes().getLast().getId();
             jCBCliente.removeAllItems();
             jCBCliente.addItem("N/A");
@@ -1090,9 +1172,9 @@ public class Programacao extends javax.swing.JFrame {
                 jCBCliente.addItem(x.getNome());
             });
         }
-        
+
         CadastroHotel cadastroHotel = new CadastroHotel(hoteis);
-        if(!cadastroHotel.getListaAtualizadaHoteis().isEmpty()){
+        if (!cadastroHotel.getListaAtualizadaHoteis().isEmpty()) {
             ultimoIdHotel = cadastroCliente.getListaAtualizadaClientes().getLast().getId();
             jCBHospedagem.removeAllItems();
             jCBHospedagem.addItem("N/A");
@@ -1100,9 +1182,9 @@ public class Programacao extends javax.swing.JFrame {
                 jCBHospedagem.addItem(x.getNomeComCidadeEEstado());
             });
         }
-        
+
         CadastroCarro cadastroCarro = new CadastroCarro(carros);
-        if(!cadastroCarro.getListaAtualizadaCarros().isEmpty()){
+        if (!cadastroCarro.getListaAtualizadaCarros().isEmpty()) {
             ultimoIdCliente = cadastroCarro.getListaAtualizadaCarros().getLast().getId();
             jCBCarro.removeAllItems();
             jCBCarro.addItem("N/A");
@@ -1110,6 +1192,42 @@ public class Programacao extends javax.swing.JFrame {
                 jCBCarro.addItem(x.getNome());
             });
         }
+
+        linhasArquivoDemaisInfos.clear();
+        try (BufferedReader br = new BufferedReader(new FileReader("demaisInfos.txt"))) {
+            String linha;
+            while ((linha = br.readLine()) != null) {
+                linhasArquivoDemaisInfos.add(linha);
+            }
+
+            linhasArquivoDemaisInfos.forEach(elemento -> {
+                String[] dados = elemento.split("\\|");
+                int qtdArray = dados.length;
+                Usuario usuarioHelper = new Usuario();
+
+                demaisInfos.add(new DemaisInfos(
+                        Integer.parseInt(dados[0].trim()),
+                        dados[1].trim(),
+                        (qtdArray >= 3 ? stringToUser(dados[2].trim(), usuarioHelper) : null),
+                        (qtdArray >= 4 ? stringToUser(dados[3].trim(), usuarioHelper) : null),
+                        (qtdArray >= 5 ? stringToUser(dados[4].trim(), usuarioHelper) : null),
+                        (qtdArray >= 6 ? stringToUser(dados[5].trim(), usuarioHelper) : null)
+                ));
+            });
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Erro no arquivo demaisInfos.txt, talvez ele ainda esteja vazio!");
+        }
+
+        atualizarRemove();
+    }
+    
+    
+    private List<String> listaDisponivelDoDia(JDateChooser data) {
+        String dataProgram = data.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(data.getDate());
+        CadastroUsuario cadastroUsuario = new CadastroUsuario(usuarios);
+        List<Usuario> usersAtt = cadastroUsuario.getListaAtualizadaUsuarios();
+        List<DemaisInfos> demaisAtt = new ArrayList<>();
+        List<Bloco> blocosAtt = new ArrayList<>();
         
         linhasArquivoDemaisInfos.clear();
         try (BufferedReader br = new BufferedReader(new FileReader("demaisInfos.txt"))) {
@@ -1117,194 +1235,348 @@ public class Programacao extends javax.swing.JFrame {
             while ((linha = br.readLine()) != null) {
                 linhasArquivoDemaisInfos.add(linha);
             }
-            
+
             linhasArquivoDemaisInfos.forEach(elemento -> {
                 String[] dados = elemento.split("\\|");
                 int qtdArray = dados.length;
                 Usuario usuarioHelper = new Usuario();
-                
-                demaisInfos.add(new DemaisInfos(
-                    Integer.parseInt(dados[0].trim()),
-                    dados[1].trim(),
-                    (qtdArray >= 3 ? stringToUser(dados[2].trim(), usuarioHelper): null),
-                    (qtdArray >= 4 ? stringToUser(dados[3].trim(), usuarioHelper): null),
-                    (qtdArray >= 5 ? stringToUser(dados[4].trim(), usuarioHelper): null),
-                    (qtdArray >= 6 ? stringToUser(dados[5].trim(), usuarioHelper): null)
+
+                demaisAtt.add(new DemaisInfos(
+                        Integer.parseInt(dados[0].trim()),
+                        dados[1].trim(),
+                        (qtdArray >= 3 ? stringToUser(dados[2].trim(), usuarioHelper) : null),
+                        (qtdArray >= 4 ? stringToUser(dados[3].trim(), usuarioHelper) : null),
+                        (qtdArray >= 5 ? stringToUser(dados[4].trim(), usuarioHelper) : null),
+                        (qtdArray >= 6 ? stringToUser(dados[5].trim(), usuarioHelper) : null)
                 ));
-            });
-        } catch (IOException e ) {
+            });          
+        } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Erro no arquivo demaisInfos.txt, talvez ele ainda esteja vazio!");
         }
+
+        linhasArquivoBlocoProgramacao.clear();
+        try (BufferedReader br = new BufferedReader(new FileReader("blocos.txt"))) {
+            String linha;
+            while ((linha = br.readLine()) != null) {
+                linhasArquivoBlocoProgramacao.add(linha);
+            }
+
+            linhasArquivoBlocoProgramacao.forEach(elemento -> {
+                String[] dados = elemento.split("\\|");
+
+                if (dados.length >= 6) {
+                    String[] dados4Array = dados[5].trim().replace("[", "").replace("]", "").split(",");
+                    Usuario usuarioHelper = new Usuario();
+                    List<Usuario> listaDaEquipe = Arrays.stream(dados4Array)
+                            .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
+                            .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
+                            .collect(Collectors.toList());
+                    int qtdArray = dados.length;
+                    blocosAtt.add(new Bloco(
+                            Integer.parseInt(dados[0].trim()),
+                            dados[1].trim(), //data
+                            dados[2].trim(), //proj
+                            dados[3].trim().equals("null") ? null : new Cliente().getById(Integer.parseInt(dados[3].trim()), clientes), //client conv
+                            dados[4].trim(), // finalidade
+                            listaDaEquipe, //equipe
+                            dados[6].trim().equals("null") ? null : usuarioHelper.getById(Integer.parseInt(dados[6].trim()), usuarios), //user resp
+                            dados[7].trim().equals("null") ? null : new Carro().getById(Integer.parseInt(dados[7].trim()), carros), //carro
+                            dados[8].trim(), //carretao
+                            dados[9].trim(), //data
+                            dados[10].trim(), //data
+                            dados[11].trim(), //hora
+                            dados[12].trim(), //hora
+                            dados[13].trim(), //hora
+                            dados[14].trim(), //hora
+                            dados[15].trim(), //hora
+                            dados[16].trim(), //alm
+                            dados[17].trim(), //jan
+                            dados[18].trim().equals("null") ? null : new Hotel().getById(Integer.parseInt(dados[18].trim()), hoteis), //hotel
+                            (qtdArray >= 20 ? dados[19].trim() : null)
+                    ));
+                }
+            });
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Erro no arquivo blocos.txt, talvez ele ainda esteja vazio!");
+        }
         
-        atualizarRemove();
+        List<String> nomesExistenteDemaisAtt = (List<String>) demaisAtt.stream()
+            .filter(x -> x != null && x.getDataProgramacao() != null && x.getDataProgramacao().equals(dataProgram))
+            .flatMap(x -> Stream.of(
+                x.getEletricistasInternos() != null ? x.getEletricistasInternos() : Collections.emptyList(),
+                x.getMecanicosInternos() != null ? x.getMecanicosInternos() : Collections.emptyList(),
+                x.getFerias() != null ? x.getFerias() : Collections.emptyList(),
+                x.getFolgas() != null ? x.getFolgas() : Collections.emptyList()
+            ).flatMap(Collection::stream))
+            .map(u -> ((Usuario) u).getNomeDeGuerra())
+            .collect(Collectors.toList());
+
+        List<String> nomesExistenteBlocosAtt = (List<String>) blocosAtt.stream()
+            .filter(x -> x != null && x.getDataProgramacao() != null && x.getDataProgramacao().equals(dataProgram))
+            .flatMap(x -> x.getEquipe() != null ? x.getEquipe().stream() : Stream.empty())
+            .map(Usuario::getNomeDeGuerra)
+            .collect(Collectors.toList());
+
+        List<String> nomesNaoExistente = (List<String>) usersAtt.stream()
+            .filter(u -> !nomesExistenteDemaisAtt.contains(u.getNomeDeGuerra()) && !nomesExistenteBlocosAtt.contains(u.getNomeDeGuerra()))
+            .map(Usuario::getNomeDeGuerra)
+            .sorted()
+            .collect(Collectors.toList());
+        
+        return nomesNaoExistente;
     }
-       
-    private boolean comparaData(JDateChooser data){
-        if(data.getDate() != null && data.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isBefore(LocalDate.now())){
+    
+
+    private boolean comparaData(JDateChooser data) {
+        if (data.getDate() != null && data.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isBefore(LocalDate.now())) {
             JOptionPane.showMessageDialog(null, "Não pode selecionar datas retroativas, tanto na data da Programação, quando na realização da obra!", "Atenção", JOptionPane.WARNING_MESSAGE);
             return true;
         }
         return false;
     }
-    
+
+    private boolean comparaIdaMaiorQueProgramacao(JDateChooser data, JDateChooser programacao) {
+        if (data.getDate() != null && data.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isAfter(programacao.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())) {
+            JOptionPane.showMessageDialog(null, "A data de Ida não pode ser maior que a data escolhida na Programação! Revise as datas!", "Atenção", JOptionPane.WARNING_MESSAGE);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean comparaDatasDeIdaEVolta(JDateChooser dataIda, JDateChooser volta) {
+        if (dataIda.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isAfter(volta.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()) || volta.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isBefore(dataIda.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())) {
+            JOptionPane.showMessageDialog(null, "Espaço de dias inválido!\nColoque na Ida a data da 'Programação Inicial' e para data de Retorno uma data para retornar que seja maior oi igual a data da Programação Inicial!", "Atenção", JOptionPane.WARNING_MESSAGE);
+            return true;
+        }
+        return false;
+    }
+
     private void jBAddBlocoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBAddBlocoActionPerformed
-        if(String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE")){
+        listaDisponivelDoDia(jDCDataProgramacao);
+        
+        if (String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE")) {
             JOptionPane.showMessageDialog(null, "Você precisa selecionar uma Finalidade!", "Atenção", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
-        if((jDCDataProgramacao.getDate()!=null && String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !String.valueOf(jCBCarro.getSelectedItem()).equals("N/A")) || (jDCDataProgramacao.getDate()!=null && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !jFTFNumero.getText().equals(""))){
-            String projeto = jFTFNumero.getText().equals("") ? null : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
+
+        String texto = jFTFNumero.getText();
+        String projeto = (texto == null || texto.isEmpty()) ? "" :
+            texto.split("\\.").length > 1 && texto.split("\\.")[1].equals("0") ? 
+            texto.split("\\.")[0] : 
+            texto;
+
+        if ((jDCDataProgramacao.getDate() != null && String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !String.valueOf(jCBCarro.getSelectedItem()).equals("N/A"))
+            || (jDCDataProgramacao.getDate() != null && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !jFTFNumero.getText().equals(""))
+            || ("OCULTAR".equals(String.valueOf(jCBFinalidade.getSelectedItem())) && (projeto.equals("") || projeto.isEmpty()))) {
+            
+            if(!String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && jCBCliente.getSelectedItem().equals("N/A")){
+                JOptionPane.showMessageDialog(null, "Selecione um cliente válido ou mude a finalidade para VISITA COMERCIAL!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
             for (Bloco x : blocos) {
-                if((x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))&& x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))&& x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)){
+                if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)) {
                     JOptionPane.showMessageDialog(null, "Já há salvo um bloco com esses dados principais. Altere-o em vez de criar um novo!", "Atenção", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
             }
+
+            // Obtenha as datas inicial e final
+            Date dataInicial = jDCDataSaida.getDate();
+            Date dataFinal = jDCDataRetorno.getDate();
+
+            // Crie um calendário para iterar sobre as datas
+            Calendar calendario = Calendar.getInstance();
+            calendario.setTime(dataInicial);
+            calendario.set(Calendar.HOUR_OF_DAY, 0);
+            calendario.set(Calendar.MINUTE, 0);
+            calendario.set(Calendar.SECOND, 0);
+            calendario.set(Calendar.MILLISECOND, 0);
+
+            Calendar calendarioFinal = Calendar.getInstance();
+            calendarioFinal.setTime(dataFinal);
+            calendarioFinal.set(Calendar.HOUR_OF_DAY, 0);
+            calendarioFinal.set(Calendar.MINUTE, 0);
+            calendarioFinal.set(Calendar.SECOND, 0);
+            calendarioFinal.set(Calendar.MILLISECOND, 0);
             
-            
-            String dataProgramacao = jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()); 
-            if(comparaData(jDCDataProgramacao))
-                return;
-            Cliente cliente = new Cliente().getByNameEmpresa(String.valueOf(jCBCliente.getSelectedItem()), clientes);
-            String finalidade = String.valueOf(jCBFinalidade.getSelectedItem());
-            if(cliente == null && !finalidade.equals("VISITA COMERCIAL")){
-                JOptionPane.showMessageDialog(null, "Selecione um cliente! Caso seja Visita Comercial, mude a 'Finalidade'!", "Atenção", JOptionPane.WARNING_MESSAGE);
-                return;
+            while (calendario.getTime().before(calendarioFinal.getTime()) || calendario.getTime().equals(calendarioFinal.getTime())) {
+                String dataProgramacao = new SimpleDateFormat("dd/MM/yyyy").format(calendario.getTime());
+                if (comparaData(jDCDataProgramacao)) {
+                    return;
+                }
+                Cliente cliente = new Cliente().getByNameEmpresa(String.valueOf(jCBCliente.getSelectedItem()), clientes);
+                String finalidade = String.valueOf(jCBFinalidade.getSelectedItem());
+                if (cliente == null && !finalidade.equals("VISITA COMERCIAL")) {
+                    JOptionPane.showMessageDialog(null, "Selecione um cliente! Caso seja Visita Comercial, mude a 'Finalidade'!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                List<Usuario> equipe = new ArrayList<>();
+
+                if (modeloSelec.getSize() > 0) {
+                    ArrayList<String> arrayList = new ArrayList<>(
+                            IntStream.range(0, modeloSelec.getSize())
+                                    .mapToObj(modeloSelec::getElementAt)
+                                    .collect(Collectors.toList())
+                    );
+                    equipe = (ArrayList<Usuario>) usuarios.stream()
+                            .filter(usuario -> arrayList.stream()
+                            .anyMatch(nome -> nome.equals(usuario.getNomeDeGuerra()))
+                            )
+                            .collect(Collectors.toList());
+                }
+                if (jCBResponsavel.getSelectedItem() == null) {
+                    JOptionPane.showMessageDialog(null, "Selecione e Adicione ao menos um membro a equipe!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                
+                if(String.valueOf(jCBResponsavel.getSelectedItem()).equals("OUTRO") && jTFRespOutro.getText().equals("")){
+                    JOptionPane.showMessageDialog(null, "Selecione um responsável na lista principal!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                    return;
+                } 
+                    
+                String nomeResponsavel = String.valueOf(jCBResponsavel.getSelectedItem()).equals("OUTRO") ? jTFRespOutro.getText() : String.valueOf(jCBResponsavel.getSelectedItem());
+                Usuario responsavel = new Usuario().getByNameDeGuerra(nomeResponsavel, usuarios);
+                
+                responsavel = finalidade.equals("VISITA COMERCIAL") ? null : responsavel; 
+                
+                checagemCarteira();
+                
+                Carro carro = new Carro().getByName(String.valueOf(jCBCarro.getSelectedItem()), carros);
+
+                String carretao = String.valueOf(jCBCarretao.getSelectedItem());
+                Hotel hotel = new Hotel().getByNameHotel(String.valueOf(jCBHospedagem.getSelectedItem()).split(",")[0], hoteis);
+                String almoco = jTFAlmoco.getText().equals("") ? null : jTFAlmoco.getText();
+                String janta = jTFJanta.getText().equals("") ? null : jTFJanta.getText();
+                String dataSaida = jDCDataSaida.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataSaida.getDate());
+                if (comparaData(jDCDataSaida)) {
+                    return;
+                }
+                if (comparaIdaMaiorQueProgramacao(jDCDataSaida, jDCDataProgramacao)) {
+                    return;
+                }
+                String dataRetorno = jDCDataRetorno.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataRetorno.getDate());
+                if (comparaData(jDCDataRetorno)) {
+                    return;
+                }
+                if (comparaDatasDeIdaEVolta(jDCDataSaida, jDCDataRetorno)) {
+                    return;
+                }
+                String horaSaida = jFTFHoraSaida.getText();
+                if (dataProgramacao.equals("") || dataSaida.equals("") || dataRetorno.equals("") || horaSaida.equals("")) {
+                    JOptionPane.showMessageDialog(null, "Preencha corretamente todas datas e hora de saída!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                String horaManhaInicio = jFTFHoraInicioManha.getText();
+                String horaManhaFim = jFTFHoraFimManha.getText();
+                String horaTardeInicio = jFTFHoraInicioTarde.getText();
+                String horaTardeFim = jFTFHoraFimTarde.getText();
+                if (horaManhaInicio.equals("") || horaManhaFim.equals("") || horaTardeInicio.equals("") || horaTardeFim.equals("")) {
+                    JOptionPane.showMessageDialog(null, "Informe o horário de trabalho corretamente!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                
+                String observacoes = jTFObservacoes.getText().equals("") ? null : jTFObservacoes.getText();
+                
+                Bloco bloco = new Bloco(dataProgramacao, projeto, cliente, finalidade, equipe, responsavel, carro, carretao, dataSaida, dataRetorno, horaSaida, horaManhaInicio, horaManhaFim, horaTardeInicio, horaTardeFim, almoco, janta, hotel, observacoes);
+                
+                blocos.add(bloco);
+                
+                String nomesColabs = bloco.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
+                String blocoSalvar = bloco.getId() + "|" + dataProgramacao + "|" + projeto + "|" + (cliente == null ? null : cliente.getId()) + "|" + finalidade + "|" + nomesColabs + "|" + (responsavel == null ? null : responsavel.getId()) + "|" + (carro == null ? null : carro.getId()) + "|" + carretao + "|" + dataSaida + "|" + dataRetorno + "|" + horaSaida + "|" + horaManhaInicio + "|" + horaManhaFim + "|" + horaTardeInicio + "|" + horaTardeFim + "|" + almoco + "|" + janta + "|" + (hotel == null ? null : hotel.getId()) + "|" + observacoes;
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter("blocos.txt", true))) {
+                    writer.write(blocoSalvar);
+                    writer.newLine();
+                    JOptionPane.showMessageDialog(null, "Bloco de programação gravado com sucesso para a programação do dia "+dataProgramacao+"!");
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
+                }
+                // Avance para o próximo dia
+                calendario.add(Calendar.DAY_OF_YEAR, 1);
             }
-            List<Usuario> equipe = new ArrayList<>();
-
-            if (modeloSelec.getSize() > 0) {
-                ArrayList<String> arrayList = new ArrayList<>(
-                    IntStream.range(0, modeloSelec.getSize())
-                        .mapToObj(modeloSelec::getElementAt)
-                        .collect(Collectors.toList())
-                );
-                equipe = (ArrayList<Usuario>) usuarios.stream()
-                    .filter(usuario -> arrayList.stream()
-                        .anyMatch(nome -> nome.equals(usuario.getNomeDeGuerra()))
-                    )
-                    .collect(Collectors.toList());
-            }
-            if(jCBResponsavel.getSelectedItem() == null){
-                JOptionPane.showMessageDialog(null, "Selecione e Adicione ao menos um membro a equipe!", "Atenção", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            Usuario responsavel = new Usuario().getByNameDeGuerra(String.valueOf(jCBResponsavel.getSelectedItem()), usuarios);
-
-            checagemCarteira();
-
-            Carro carro = new Carro().getByName(String.valueOf(jCBCarro.getSelectedItem()), carros);
-
-            String carretao = String.valueOf(jCBCarretao.getSelectedItem());
-            Hotel hotel = new Hotel().getByNameHotel(String.valueOf(jCBHospedagem.getSelectedItem()).split(",")[0], hoteis);
-            String almoco = jTFAlmoco.getText().equals("")?null:jTFAlmoco.getText();
-            String janta = jTFJanta.getText().equals("")?null:jTFJanta.getText();
-            String dataSaida = jDCDataSaida.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataSaida.getDate()); 
-            if(comparaData(jDCDataSaida))
-                return;
-            String dataRetorno = jDCDataRetorno.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataRetorno.getDate());
-            if(comparaData(jDCDataRetorno))
-                return;
-            String horaSaida = jFTFHoraSaida.getText();
-            if(dataProgramacao.equals("") || dataSaida.equals("") || dataRetorno.equals("") || horaSaida.equals("")){
-                JOptionPane.showMessageDialog(null, "Preencha corretamente todas datas e hora de saída!", "Atenção", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            String horaManhaInicio = jFTFHoraInicioManha.getText();
-            String horaManhaFim = jFTFHoraFimManha.getText();
-            String horaTardeInicio = jFTFHoraInicioTarde.getText();
-            String horaTardeFim = jFTFHoraFimTarde.getText();
-            if(horaManhaInicio.equals("") || horaManhaFim.equals("") || horaTardeInicio.equals("") || horaTardeFim.equals("")){
-                JOptionPane.showMessageDialog(null, "Informe o horário de trabalho corretamente!", "Atenção", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            Bloco bloco = new Bloco(dataProgramacao, projeto, cliente, finalidade, equipe, responsavel, carro, carretao, dataSaida, dataRetorno, horaSaida, horaManhaInicio, horaManhaFim, horaTardeInicio, horaTardeFim, almoco, janta, hotel);
-
-            blocos.add(bloco);
-            String nomesColabs =  bloco.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
-            String blocoSalvar = bloco.getId() +"|"+ dataProgramacao +"|"+ projeto +"|"+ (cliente==null?null:cliente.getId()) +"|"+ finalidade +"|"+ nomesColabs +"|"+ (responsavel==null?null:responsavel.getId()) +"|"+ (carro==null?null:carro.getId()) +"|"+ carretao +"|"+ dataSaida +"|"+ dataRetorno +"|"+ horaSaida +"|"+ horaManhaInicio +"|"+ horaManhaFim +"|"+ horaTardeInicio +"|"+ horaTardeFim +"|"+ almoco +"|"+ janta +"|"+ (hotel==null?null:hotel.getId());
-
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter("blocos.txt", true))) {
-                writer.write(blocoSalvar);
-                writer.newLine();
-                JOptionPane.showMessageDialog(null, "Bloco de programação gravado com sucesso!");
-                limpaCampos();
-            } catch (IOException e ) {
-                JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
-            }
+            limpaCampos();
             return;
         }
         JOptionPane.showMessageDialog(null, "Não é possível adicionar, dados insuficiêntes!\nVISITA TÉCNICA precisa de DATA, Finalidade VISITA TÉCNICA e CARRO\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
-        
     }//GEN-LAST:event_jBAddBlocoActionPerformed
 
     private void jBAlterarBlocoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBAlterarBlocoActionPerformed
         boolean exists = false;
-        boolean isVisitaComercial = validaVisitaComercial(); 
-        if(!isVisitaComercial && !validaOutros()){
+        boolean isVisitaComercial = validaVisitaComercial();
+        if (!isVisitaComercial && !validaOutros()) {
             JOptionPane.showMessageDialog(null, "Dados insuficientes para Atualizar!\nSe for atualização de uma VISITA COMPERCIAL, preencha a DATA, a FINALIDADE 'VISITA COMERCIAL' e o CARRO.\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
             return;
         }
         String projeto = jFTFNumero.getText().equals("") ? null : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
         for (Bloco x : blocos) {
-            if((x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))&& x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))&& x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)){
+            if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)) {
                 exists = true;
                 List<Usuario> equipe = new ArrayList<>();
-                    if (modeloSelec.getSize() > 0) {
-                        ArrayList<String> arrayList = new ArrayList<>(
+                if (modeloSelec.getSize() > 0) {
+                    ArrayList<String> arrayList = new ArrayList<>(
                             IntStream.range(0, modeloSelec.getSize())
-                                .mapToObj(modeloSelec::getElementAt)
-                                .collect(Collectors.toList())
-                        );
-                        equipe = (ArrayList<Usuario>) usuarios.stream()
+                                    .mapToObj(modeloSelec::getElementAt)
+                                    .collect(Collectors.toList())
+                    );
+                    equipe = (ArrayList<Usuario>) usuarios.stream()
                             .filter(usuario -> arrayList.stream()
-                                .anyMatch(nome -> nome.equals(usuario.getNomeDeGuerra()))
+                            .anyMatch(nome -> nome.equals(usuario.getNomeDeGuerra()))
                             )
                             .collect(Collectors.toList());
-                    }
+                }
+                
+                Cliente cliente = new Cliente().getByNameEmpresa(String.valueOf(jCBCliente.getSelectedItem()), clientes);
+                x.setCliente(cliente);
+                String finalidade = String.valueOf(jCBFinalidade.getSelectedItem());
+                if (cliente == null && !finalidade.equals("VISITA COMERCIAL")) {
+                    JOptionPane.showMessageDialog(null, "Selecione um cliente! Caso seja Visita Comercial, mude a 'Finalidade'!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
                 Usuario responsavel = null;
-                if(!equipe.isEmpty()){
+                if (!equipe.isEmpty()) {
                     x.setEquipe(equipe);
-                    responsavel = new Usuario().getByNameDeGuerra(String.valueOf(jCBResponsavel.getSelectedItem()), usuarios);
+                    String nomeResponsavel = String.valueOf(jCBResponsavel.getSelectedItem()).equals("OUTRO") ? jTFRespOutro.getText() : String.valueOf(jCBResponsavel.getSelectedItem());
+                    responsavel = new Usuario().getByNameDeGuerra(nomeResponsavel, usuarios);
+                    responsavel = finalidade.equals("VISITA COMERCIAL") ? null : responsavel; 
                     x.setResponsavelDoTrabalho(responsavel);
-                }else{
+
+                } else {
                     JOptionPane.showMessageDialog(null, "Equipe não atualizada, a equipe tem que ser composta pelo menos por um integrante!", "Atenção", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
-                Cliente cliente = new Cliente().getByNameEmpresa(String.valueOf(jCBCliente.getSelectedItem()), clientes);
-                x.setCliente(cliente);
+                
                 Carro carro = new Carro().getByName(String.valueOf(jCBCarro.getSelectedItem()), carros);
                 x.setCarro(carro);
                 String carretao = String.valueOf(jCBCarretao.getSelectedItem());
                 x.setCarretao(carretao);
                 Hotel hotel = new Hotel().getByNameHotel(String.valueOf(jCBHospedagem.getSelectedItem()).split(",")[0], hoteis);
                 x.setHospedagem(hotel);
-                String almoco = jTFAlmoco.getText().equals("")?null:jTFAlmoco.getText();
+                String almoco = jTFAlmoco.getText().equals("") ? null : jTFAlmoco.getText();
                 x.setAlmoco(almoco);
-                String janta = jTFJanta.getText().equals("")?null:jTFJanta.getText();
+                String janta = jTFJanta.getText().equals("") ? null : jTFJanta.getText();
                 x.setJanta(janta);
-                
-                String dataSaida = jDCDataSaida.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataSaida.getDate()); 
-                String dataRetorno = jDCDataRetorno.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataRetorno.getDate());
+
+                String dataSaida = jDCDataSaida.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataSaida.getDate());
+                String dataRetorno = jDCDataRetorno.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataRetorno.getDate());
                 String horaSaida = jFTFHoraSaida.getText();
-                if(dataSaida.equals("") || dataRetorno.equals("") || horaSaida.equals("")){
+                if (dataSaida.equals("") || dataRetorno.equals("") || horaSaida.equals("")) {
                     JOptionPane.showMessageDialog(null, "Preencha corretamente todas datas e hora de saída!\nLembrando que a data do bloco não é alterada! Se precisar, delete o bloco e crie outro!", "Atenção", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
-                if(!comparaData(jDCDataSaida))
+                if (!comparaData(jDCDataSaida)) {
                     x.setDataDeSaida(dataSaida);
-                if(!comparaData(jDCDataRetorno))
+                }
+                if (!comparaData(jDCDataRetorno)) {
                     x.setDataDeRetorno(dataRetorno);
+                }
                 x.setHorarioDeSaida(horaSaida);
 
                 String horaManhaInicio = jFTFHoraInicioManha.getText();
                 String horaManhaFim = jFTFHoraFimManha.getText();
                 String horaTardeInicio = jFTFHoraInicioTarde.getText();
                 String horaTardeFim = jFTFHoraFimTarde.getText();
-                if(horaManhaInicio.equals("") || horaManhaFim.equals("") || horaTardeInicio.equals("") || horaTardeFim.equals("")){
+                if (horaManhaInicio.equals("") || horaManhaFim.equals("") || horaTardeInicio.equals("") || horaTardeFim.equals("")) {
                     JOptionPane.showMessageDialog(null, "Informe o horário de trabalho corretamente!", "Atenção", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
@@ -1313,23 +1585,42 @@ public class Programacao extends javax.swing.JFrame {
                 x.setHorarioDeTrabalhoInicioMeioDia(horaTardeInicio);
                 x.setHorarioDeTrabalhoFim(horaTardeFim);
                 
-                String nomesColabs =  x.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
-                String blocoSalvar = x.getId() +"|"+ x.getDataProgramacao() +"|"+ projeto +"|"+ (cliente==null?null:cliente.getId()) +"|"+ x.getFinalidade() +"|"+ nomesColabs +"|"+ (responsavel==null?null:responsavel.getId()) +"|"+ (carro==null?null:carro.getId()) +"|"+ carretao +"|"+ dataSaida +"|"+ dataRetorno +"|"+ horaSaida +"|"+ horaManhaInicio +"|"+ horaManhaFim +"|"+ horaTardeInicio +"|"+ horaTardeFim +"|"+ almoco +"|"+ janta +"|"+ (hotel==null?null:hotel.getId());
+                String observacoes = jTFObservacoes.getText().equals("") ? null : jTFObservacoes.getText();
+                x.setObservacoes(jTFObservacoes.getText());
+                
+                String nomesColabs = x.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
+                String blocoSalvar = x.getId() + "|" + x.getDataProgramacao() + "|" + projeto + "|" + (cliente == null ? null : cliente.getId()) + "|" + x.getFinalidade() + "|" + nomesColabs + "|" + (responsavel == null ? null : responsavel.getId()) + "|" + (carro == null ? null : carro.getId()) + "|" + carretao + "|" + dataSaida + "|" + dataRetorno + "|" + horaSaida + "|" + horaManhaInicio + "|" + horaManhaFim + "|" + horaTardeInicio + "|" + horaTardeFim + "|" + almoco + "|" + janta + "|" + (hotel == null ? null : hotel.getId() + "|" + observacoes);
 
                 try (BufferedWriter writer = new BufferedWriter(new FileWriter("blocos.txt"))) {
-                    writer.write(blocoSalvar);
-                    writer.newLine();
+                    for (Bloco bloco : blocos) {
+                        String nomesColabsBl = bloco.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
+                        String blocoSalvarBl = bloco.getId() + "|" + bloco.getDataProgramacao() + "|" 
+                            + bloco.getProjeto() + "|" 
+                            + (bloco.getCliente() == null ? null : bloco.getCliente().getId()) + "|" 
+                            + bloco.getFinalidade() + "|" + nomesColabsBl + "|" 
+                            + (bloco.getResponsavelDoTrabalho() == null ? null : bloco.getResponsavelDoTrabalho().getId()) + "|" 
+                            + (bloco.getCarro() == null ? null : bloco.getCarro().getId()) + "|" 
+                            + bloco.getCarretao() + "|" + bloco.getDataDeSaida() + "|" 
+                            + bloco.getDataDeRetorno() + "|" + bloco.getHorarioDeSaida() + "|" 
+                            + bloco.getHorarioDeTrabalhoInicio() + "|" + bloco.getHorarioDeTrabalhoFimMeioDia() + "|" 
+                            + bloco.getHorarioDeTrabalhoInicioMeioDia() + "|" + bloco.getHorarioDeTrabalhoFim() + "|" 
+                            + bloco.getAlmoco() + "|" + bloco.getJanta() + "|" 
+                            + (bloco.getHospedagem() == null || bloco.getHospedagem().equals("null") ? null : bloco.getHospedagem().getId()) + "|" 
+                            + bloco.getObservacoes();
+                        writer.write(blocoSalvarBl);    // Escreve a linha no arquivo
+                        writer.newLine();       // Adiciona uma nova linha
+                    }
                     JOptionPane.showMessageDialog(null, "Bloco de programação gravado com sucesso!");
                     limpaCampos();
-                } catch (IOException e ) {
+                } catch (IOException e) {
                     JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
                 }
-                
+
                 break;
             }
-            
+
         }
-        if(!exists) {
+        if (!exists) {
             JOptionPane.showMessageDialog(null, "Bloco não encontrado para fazer alteração! Caso ele ainda não exista, crie ele!");
             limpaCampos();
             return;
@@ -1337,46 +1628,58 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jBAlterarBlocoActionPerformed
 
     private void jBRemoverActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBRemoverActionPerformed
-        boolean isVisitaComercial = validaVisitaComercial(); 
+        boolean isVisitaComercial = validaVisitaComercial();
         boolean exists = false;
-        if(!isVisitaComercial && !validaOutros()){
+        if (!isVisitaComercial && !validaOutros()) {
             JOptionPane.showMessageDialog(null, "Dados insuficientes para Remover!\nSe for remoção de uma VISITA COMPERCIAL, preencha a DATA, a FINALIDADE 'VISITA COMERCIAL' e o CARRO.\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
             return;
         }
         String projeto = jFTFNumero.getText().equals("") ? null : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
         List<Bloco> auxBlocos = new ArrayList<>(blocos);
         for (Bloco x : auxBlocos) {
-            if((x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))&& x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))&& x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)){
+            if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)) {
                 blocos.remove(x);
                 JOptionPane.showMessageDialog(null, "Bloco de programação removido com sucesso!");
                 exists = true;
                 break;
             }
         }
-        
-        if(!exists){
+
+        if (!exists) {
             JOptionPane.showMessageDialog(null, "Não foi encontrado o bloco para remover!");
             return;
         }
-        if(blocos.isEmpty()){
+        if (blocos.isEmpty()) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter("blocos.txt"))) {
                 writer.write("");
                 limpaCampos();
-            } catch (IOException e ) {
+            } catch (IOException e) {
                 JOptionPane.showMessageDialog(null, "Erro ao deletar a programação!");
             }
         }
-        for (Bloco x : blocos) {
-            String nomesColabs =  x.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
-            String blocoSalvar = x.getId() +"|"+ x.getDataProgramacao() +"|"+ x.getProjeto()+"|"+ x.getCliente().getId() +"|"+ x.getFinalidade() +"|"+ nomesColabs +"|"+ x.getResponsavelDoTrabalho().getId() +"|"+ x.getCarro().getId() +"|"+ x.getCarretao() +"|"+ x.getDataDeSaida() +"|"+ x.getDataDeRetorno() +"|"+ x.getHorarioDeSaida() +"|"+ x.getHorarioDeTrabalhoInicio() +"|"+ x.getHorarioDeTrabalhoFimMeioDia() +"|"+ x.getHorarioDeTrabalhoInicioMeioDia() +"|"+ x.getHorarioDeTrabalhoFim() +"|"+ x.getAlmoco() +"|"+ x.getJanta() +"|"+ x.getHospedagem().getId();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("blocos.txt", false))) {
+    // Loop para escrever os blocos
+            for (Bloco bloco : blocos) {
+                String nomesColabs = bloco.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
+                String blocoSalvar = bloco.getId() + "|" + bloco.getDataProgramacao() + "|"
+                    + bloco.getProjeto() + "|"
+                    + (bloco.getCliente() == null ? null : bloco.getCliente().getId()) + "|"
+                    + bloco.getFinalidade() + "|" + nomesColabs + "|"
+                    + (bloco.getResponsavelDoTrabalho() == null ? null : bloco.getResponsavelDoTrabalho().getId()) + "|"
+                    + (bloco.getCarro() == null ? null : bloco.getCarro().getId()) + "|"
+                    + bloco.getCarretao() + "|" + bloco.getDataDeSaida() + "|"
+                    + bloco.getDataDeRetorno() + "|" + bloco.getHorarioDeSaida() + "|"
+                    + bloco.getHorarioDeTrabalhoInicio() + "|" + bloco.getHorarioDeTrabalhoFimMeioDia() + "|"
+                    + bloco.getHorarioDeTrabalhoInicioMeioDia() + "|" + bloco.getHorarioDeTrabalhoFim() + "|"
+                    + bloco.getAlmoco() + "|" + bloco.getJanta() + "|"
+                    + (bloco.getHospedagem() == null || bloco.getHospedagem().equals("null") ? null : bloco.getHospedagem().getId()) + "|"
+                    + bloco.getObservacoes();
 
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter("blocos.txt"))) {
-                writer.write(blocoSalvar);
-                writer.newLine();
-                limpaCampos();
-            } catch (IOException e ) {
-                JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
+                writer.write(blocoSalvar);  // Escrever a linha no arquivo
+                writer.newLine();           // Adicionar uma nova linha após cada bloco
             }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Erro ao salvar arquivo!");
         }
         limpaCampos();
     }//GEN-LAST:event_jBRemoverActionPerformed
@@ -1385,11 +1688,21 @@ public class Programacao extends javax.swing.JFrame {
         limpaCampos();
     }//GEN-LAST:event_jBLimparActionPerformed
 
-    private void limpaCampos(){
+    private void limpaCamposSemDataProgramacao() {
+        jCBCliente.setSelectedIndex(0);
+        jCBCarro.setSelectedIndex(0);
+        modeloSelec.removeAllElements();
+        jCBResponsavel.removeAllItems();
+        listModel.removeAllElements();
+        atualizarListas();
+    }
+    
+    private void limpaCampos() {
+        jCBCliente.setSelectedIndex(0);
+        jCBCarro.setSelectedIndex(0);
         jCBFinalidade.setSelectedIndex(0);
         jCBCarretao.setSelectedIndex(0);
         modeloSelec.removeAllElements();
-        jCBResponsavel.removeAllItems();
         listModel.removeAllElements();
         atualizarListas();
         jFTFNumero.setValue(null);
@@ -1397,18 +1710,31 @@ public class Programacao extends javax.swing.JFrame {
         jDCDataRetorno.setDate(new java.util.Date(new java.util.Date().getTime() + 86400000L));
         jDCDataProgramacao.setDate(new java.util.Date(new java.util.Date().getTime() + 86400000L));
         jFTFHoraSaida.setValue(null);
-        jFTFHoraInicioManha.setValue(null);
-        jFTFHoraFimManha.setValue(null);
-        jFTFHoraInicioTarde.setValue(null);
-        jFTFHoraFimTarde.setValue(null);
+        jFTFHoraInicioManha.setText("07:30");
+        jFTFHoraFimManha.setText("12:00");
+        jFTFHoraInicioTarde.setText("13:00");
+        jFTFHoraFimTarde.setText("17:18");
         jTFAlmoco.setText("");
         jTFJanta.setText("");
+        jTFObservacoes.setText("");
+        jBAddRespOutro.setEnabled(false);
+        jBAddRespOutro.setVisible(false);
+        jTFRespOutro.setEnabled(false);
+        jTFRespOutro.setVisible(false);
+        jTFRespOutro.setText("");
+        jCBResponsavel.removeAllItems();
+        jBAddRespOutro.setEnabled(false);
+        jBAddRespOutro.setVisible(false);
+        jTFRespOutro.setEnabled(false);
+        jTFRespOutro.setVisible(false);
+        jTFRespOutro.setText("");
+        jCBResponsavel.removeAll();
     }
-    
+
     private void jMIVerDetalhesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIVerDetalhesActionPerformed
         Sobre sobre = new Sobre();
         sobre.setVisible(true);
-        
+
         sobre.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -1419,32 +1745,32 @@ public class Programacao extends javax.swing.JFrame {
 
     private void jBAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBAddActionPerformed
         String nomeSelecionado = jLColab.getSelectedValue();
-        
+
         if (nomeSelecionado != null) {
             boolean isSaved = false;
             for (int i = 0; i < modeloSelec.size(); i++) {
-                if(modeloSelec.elementAt(i).equals(nomeSelecionado)){
+                if (modeloSelec.elementAt(i).equals(nomeSelecionado)) {
                     isSaved = true;
                     break;
                 }
             }
 
-            if(isSaved){
+            if (isSaved) {
                 JOptionPane.showMessageDialog(null, "O Colaborador já está selecionado!");
                 return;
             }
-            if(modeloSelec.size()>=5){
+            if (modeloSelec.size() >= 5) {
                 JOptionPane.showMessageDialog(null, "Não tem mais espaço no carro!");
                 return;
             }
-            if(!isSaved && modeloSelec.size()<5){
+            if (!isSaved && modeloSelec.size() < 5) {
                 modeloSelec.addElement(nomeSelecionado);
                 jCBResponsavel.addItem(nomeSelecionado);
                 jLSelec.setModel(modeloSelec);
                 listModel.remove(jLColab.getSelectedIndex());
             }
-            
-            if(modeloSelec.size()==5){
+
+            if (modeloSelec.size() == 5) {
                 checagemCarteira();
             }
         } else {
@@ -1458,28 +1784,28 @@ public class Programacao extends javax.swing.JFrame {
                     return modeloSelec.contains(user.getNomeDeGuerra());
                 })
                 .collect(Collectors.toList());
-            boolean hasCarteira = usuariosFiltrados.stream().anyMatch(Usuario::isCarteiraDeCarro);
-            if(!hasCarteira){
-                JLabel mensagem = new JLabel("Nenhum dos colaboradores selecionados possuem carteira B!");
-                mensagem.setForeground(Color.RED);
-                JOptionPane.showMessageDialog(
-                    null, 
-                    mensagem, 
-                    "ATENÇÃO!", 
+        boolean hasCarteira = usuariosFiltrados.stream().anyMatch(Usuario::isCarteiraDeCarro);
+        if (!hasCarteira) {
+            JLabel mensagem = new JLabel("Nenhum dos colaboradores selecionados possuem carteira B!");
+            mensagem.setForeground(Color.RED);
+            JOptionPane.showMessageDialog(
+                    null,
+                    mensagem,
+                    "ATENÇÃO!",
                     JOptionPane.WARNING_MESSAGE
-                );
-                return false;
-            }
+            );
+            return false;
+        }
         return true;
     }
-    
+
     private void jBSubActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBSubActionPerformed
         String itemSelecionado = jLSelec.getSelectedValue();
-        
+
         if (itemSelecionado != null) {
             jCBResponsavel.removeItem(itemSelecionado);
             listModel.addElement(jLSelec.getSelectedValue());
-            modeloSelec.remove(jLSelec.getSelectedIndex()); 
+            modeloSelec.remove(jLSelec.getSelectedIndex());
             atualizarRemove();
         } else {
             JOptionPane.showMessageDialog(null, "Nenhum colaborador selecionado na listagem!");
@@ -1491,7 +1817,7 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jFTFHoraInicioManhaFocusGained
 
     private void jFTFHoraInicioManhaFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jFTFHoraInicioManhaFocusLost
-        if(jFTFHoraInicioManha.getText().equals("")){
+        if (jFTFHoraInicioManha.getText().equals("")) {
             jFTFHoraInicioManha.setValue(null);
         }
     }//GEN-LAST:event_jFTFHoraInicioManhaFocusLost
@@ -1507,7 +1833,7 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jFTFHoraSaidaFocusGained
 
     private void jFTFHoraSaidaFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jFTFHoraSaidaFocusLost
-        if(jFTFHoraSaida.getText().equals("")){
+        if (jFTFHoraSaida.getText().equals("")) {
             jFTFHoraSaida.setValue(null);
         }
     }//GEN-LAST:event_jFTFHoraSaidaFocusLost
@@ -1523,7 +1849,7 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jFTFHoraInicioTardeFocusGained
 
     private void jFTFHoraInicioTardeFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jFTFHoraInicioTardeFocusLost
-        if(jFTFHoraInicioTarde.getText().equals("")){
+        if (jFTFHoraInicioTarde.getText().equals("")) {
             jFTFHoraInicioTarde.setValue(null);
         }
     }//GEN-LAST:event_jFTFHoraInicioTardeFocusLost
@@ -1541,7 +1867,7 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jFTFHoraFimManhaFocusGained
 
     private void jFTFHoraFimManhaFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jFTFHoraFimManhaFocusLost
-        if(jFTFHoraFimManha.getText().equals("")){
+        if (jFTFHoraFimManha.getText().equals("")) {
             jFTFHoraFimManha.setValue(null);
         }
     }//GEN-LAST:event_jFTFHoraFimManhaFocusLost
@@ -1559,7 +1885,7 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jFTFHoraFimTardeFocusGained
 
     private void jFTFHoraFimTardeFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jFTFHoraFimTardeFocusLost
-        if(jFTFHoraFimTarde.getText().equals("")){
+        if (jFTFHoraFimTarde.getText().equals("")) {
             jFTFHoraFimTarde.setValue(null);
         }
     }//GEN-LAST:event_jFTFHoraFimTardeFocusLost
@@ -1583,7 +1909,7 @@ public class Programacao extends javax.swing.JFrame {
     private void jMIHoteisActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIHoteisActionPerformed
         CadastroHotel cadastroHotel = new CadastroHotel(hoteis);
         cadastroHotel.setVisible(true);
-        
+
         cadastroHotel.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -1600,7 +1926,7 @@ public class Programacao extends javax.swing.JFrame {
     private void jBDemaisInfosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBDemaisInfosActionPerformed
         DemaisInfosView demaisInfosViw = new DemaisInfosView(demaisInfos, blocos);
         demaisInfosViw.setVisible(true);
-        
+
         demaisInfosViw.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -1612,7 +1938,7 @@ public class Programacao extends javax.swing.JFrame {
     private void jMIFolgasInternosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIFolgasInternosActionPerformed
         DemaisInfosView demaisInfosViw = new DemaisInfosView(demaisInfos, blocos);
         demaisInfosViw.setVisible(true);
-        
+
         demaisInfosViw.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -1629,61 +1955,161 @@ public class Programacao extends javax.swing.JFrame {
 
     }//GEN-LAST:event_jBBuscarMouseClicked
 
-    private boolean validaVisitaComercial(){
+    private boolean validaVisitaComercial() {
         return String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !String.valueOf(jCBCarro.getSelectedItem()).equals("N/A");
     }
-    
-    private boolean validaOutros(){
+
+    private boolean validaOutros() {
         return !String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !jFTFNumero.getText().equals("") && !jFTFNumero.getText().equals(".0");
     }
-    
+
     private void jBBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBBuscarActionPerformed
-        boolean isVisitaComercial = validaVisitaComercial(); 
-        if(!isVisitaComercial && !validaOutros()){
-            JOptionPane.showMessageDialog(null, "Dados insuficientes para a busca!\nSe for VISITA COMPERCIAL, preencha a DATA, a FINALIDADE 'VISITA COMERCIAL' e o CARRO.\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
-            return;
-        }
-        if(isVisitaComercial){
+        boolean isVisitaComercial = validaVisitaComercial();
+        
+        if (isVisitaComercial) {
             for (Bloco x : blocos) {
-                if(x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))&& x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))){
-                    recuperaDados(x);   
+                if (x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) {
+                    recuperaDados(x);
+                    return;
+                }
+            }
+        } else if (!isVisitaComercial && !jFTFNumero.getText().equals("")) {
+            
+            String projeto = jFTFNumero.getText().equals("") ? "" : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
+            System.out.println("projeto "+projeto);
+            for (Bloco x : blocos) {
+                if (x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)) {
+                    recuperaDados(x);
+                    return;
+                }
+            }
+        } else if (!isVisitaComercial && String.valueOf(jCBFinalidade.getSelectedItem()).equals("OCULTAR") && !String.valueOf(jCBCliente.getSelectedItem()).equals("SELECIONE")) {
+            for (Bloco x : blocos) {
+                if (x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals("OCULTAR") && x.getCliente().getNome().equals(String.valueOf(jCBCliente.getSelectedItem()))) {
+                    recuperaDados(x);
                     return;
                 }
             }
         }else{
-            String projeto = jFTFNumero.getText().equals("") ? null : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
-            for (Bloco x : blocos) {
-                if(x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))&& x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)){
-                   recuperaDados(x);
-                   return;
-                }
-            }
+            JOptionPane.showMessageDialog(null, "Dados insuficientes para a busca!\nSe for VISITA COMPERCIAL, preencha a DATA, a FINALIDADE 'VISITA COMERCIAL' e o CARRO.\nFinalidade 'OCULTAR' precisa de pelo menos DATA, FINALIDADE e 'CLIENTE'\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
+            return;
         }
         JOptionPane.showMessageDialog(null, "Nada encontrado! Verifique se o bloco já foi criado!");
         limpaCampos();
         return;
     }//GEN-LAST:event_jBBuscarActionPerformed
 
-    private void recuperaDados(Bloco x){
+    private void jBAddRespOutroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBAddRespOutroActionPerformed
+        String nomeSelecionado = jLColab.getSelectedValue();
+        if (nomeSelecionado != null) {
+            jTFRespOutro.setText(nomeSelecionado);
+            listModel.remove(jLColab.getSelectedIndex());
+        } else {
+            JOptionPane.showMessageDialog(null, "Nenhum colaborador selecionado na listagem geral!");
+        }        
+    }//GEN-LAST:event_jBAddRespOutroActionPerformed
+
+    private void jCBResponsavelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCBResponsavelActionPerformed
+        boolean hasOther = false;
+        for (int i = 0; i < jCBResponsavel.getItemCount(); i++) {
+            if(jCBResponsavel.getItemAt(i).equals("OUTRO")){
+                hasOther = true;
+                break;
+            }
+        }
         
+        if(!hasOther && jCBResponsavel.getItemCount() >= 1){
+            jCBResponsavel.addItem("OUTRO");
+        }
+        
+        if(jCBResponsavel.getSelectedItem() != null){
+            if(jCBResponsavel.getSelectedItem().equals("OUTRO")){
+                jBAddRespOutro.setEnabled(true);
+                jBAddRespOutro.setVisible(true);
+                jTFRespOutro.setEnabled(true);
+                jTFRespOutro.setVisible(true);
+            }else{
+                jBAddRespOutro.setEnabled(false);
+                jBAddRespOutro.setVisible(false);
+                jTFRespOutro.setEnabled(false);
+                jTFRespOutro.setVisible(false);
+                jTFRespOutro.setText("");
+            }
+        }
+    }//GEN-LAST:event_jCBResponsavelActionPerformed
+
+    private void jDCDataProgramacaoPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_jDCDataProgramacaoPropertyChange
+//        if (evt.getSource() instanceof JDateChooser && evt.getPropertyName().equals("date") && evt.getNewValue() instanceof Date) {
+//            Date novaData = (Date) evt.getNewValue();
+//            SimpleDateFormat formatoData = new SimpleDateFormat("dd/MM/yyyy");
+//            String dataFormatada = formatoData.format(novaData);
+//
+//            if (!dataSalva.equals(dataFormatada)) {
+//                listModel.removeAllElements();
+//                List<String> itensArray = listaDisponivelDoDia(jDCDataProgramacao);
+//                for (String item : itensArray) {
+//                    listModel.addElement(item);
+//                }
+//                jLColab.setModel(listModel);
+//            }
+//            dataSalva = dataFormatada;
+//        }
+    }//GEN-LAST:event_jDCDataProgramacaoPropertyChange
+
+    private void recuperaDados(Bloco x) {
+
         try {
             modeloSelec.removeAllElements();
+            jCBResponsavel.removeAllItems();
             x.getEquipe().forEach(membro -> {
-                modeloSelec.addElement(membro.getNomeDeGuerra());
-                jCBResponsavel.addItem(membro.getNomeDeGuerra());
+                String nomeDeGuerra = membro.getNomeDeGuerra();
+                modeloSelec.addElement(nomeDeGuerra);
+                jCBResponsavel.addItem(nomeDeGuerra);
             });
             jLSelec.setModel(modeloSelec);
             atualizarRemove();
             jDCDataProgramacao.setDate(new SimpleDateFormat("dd/MM/yyyy").parse(x.getDataProgramacao()));
             jFTFNumero.setText(x.getProjeto());
-            jCBCliente.setSelectedItem(x.getCliente()!=null?x.getCliente().getNome():"N/A");
+            jCBCliente.setSelectedItem(x.getCliente() != null ? x.getCliente().getNome() : "N/A");
             jCBFinalidade.setSelectedItem(x.getFinalidade());
-            jCBResponsavel.setSelectedItem(x.getResponsavelDoTrabalho().getNomeDeGuerra());
+            boolean achouResp = false;
+            
+            List<Usuario> equipe = new ArrayList<>();
+            if (modeloSelec.getSize() > 0) {
+                ArrayList<String> arrayList = new ArrayList<>(
+                        IntStream.range(0, modeloSelec.getSize())
+                                .mapToObj(modeloSelec::getElementAt)
+                                .collect(Collectors.toList())
+                );
+                equipe = (ArrayList<Usuario>) usuarios.stream()
+                        .filter(usuario -> arrayList.stream()
+                        .anyMatch(nome -> nome.equals(usuario.getNomeDeGuerra()))
+                        )
+                        .collect(Collectors.toList());
+            }
+            for (Usuario item : equipe) {
+                if (item.getNomeDeGuerra().equals(x.getResponsavelDoTrabalho().getNomeDeGuerra())) {
+                    achouResp = true;
+                    jCBResponsavel.setSelectedItem(x.getResponsavelDoTrabalho().getNomeDeGuerra());
+                    break;
+                }
+            }
+            if(!achouResp){
+                jCBResponsavel.setSelectedItem("OUTRO");
+                jBAddRespOutro.setEnabled(true);
+                jBAddRespOutro.setVisible(true);
+                jTFRespOutro.setEnabled(true);
+                jTFRespOutro.setVisible(true);
+                jTFRespOutro.setText(x.getResponsavelDoTrabalho().getNomeDeGuerra());
+            }
+            
             jCBCarro.setSelectedItem(x.getCarro().getNome());
             jCBCarretao.setSelectedItem(x.getCarretao());
-            jCBHospedagem.setSelectedItem(x.getHospedagem()!=null?x.getHospedagem().getNomeComCidadeEEstado():"");
-            jTFAlmoco.setText(x.getAlmoco().equals("null")?"":x.getAlmoco());
-            jTFJanta.setText(x.getJanta().equals("null")?"":x.getJanta());
+            jCBHospedagem.setSelectedItem(x.getHospedagem() != null ? x.getHospedagem().getNomeComCidadeEEstado() : "");
+            String almoco = x.getAlmoco() == null ? "" : x.getAlmoco();
+            jTFAlmoco.setText(almoco.equals("null") ? "" : almoco);
+            String janta = x.getJanta() == null ? "" : x.getJanta();
+            jTFJanta.setText(janta.equals("null") ? "" : janta);
             jDCDataSaida.setDate(new SimpleDateFormat("dd/MM/yyyy").parse(x.getDataDeSaida()));
             jDCDataRetorno.setDate(new SimpleDateFormat("dd/MM/yyyy").parse(x.getDataDeRetorno()));
             jFTFHoraSaida.setText(x.getHorarioDeSaida());
@@ -1691,13 +2117,16 @@ public class Programacao extends javax.swing.JFrame {
             jFTFHoraFimManha.setText(x.getHorarioDeTrabalhoFimMeioDia());
             jFTFHoraInicioTarde.setText(x.getHorarioDeTrabalhoInicioMeioDia());
             jFTFHoraFimTarde.setText(x.getHorarioDeTrabalhoFim());
+            String observacoes = (x.getObservacoes() == null || "null".equals(x.getObservacoes())) ? "" : x.getObservacoes();
+            jTFObservacoes.setText(observacoes.equals("null") ? "" : observacoes);
+            
         } catch (ParseException ex) {
             Logger.getLogger(Programacao.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    private void atualizaHora(JFormattedTextField horaCampo){
-        if(horaCampo.getText().equals("")){
+
+    private void atualizaHora(JFormattedTextField horaCampo) {
+        if (horaCampo.getText().equals("")) {
             try {
                 MaskFormatter data = new MaskFormatter("##:##");
                 data.setPlaceholderCharacter('_'); // Placeholder para caracteres não digitados
@@ -1708,9 +2137,9 @@ public class Programacao extends javax.swing.JFrame {
             }
         }
     }
-    
-    private void atualizaProjeto(JFormattedTextField projetoCampo){
-        if(projetoCampo.getText().equals("")){
+
+    private void atualizaProjeto(JFormattedTextField projetoCampo) {
+        if (projetoCampo.getText().equals("")) {
             try {
                 MaskFormatter dado = new MaskFormatter("####.##");
                 dado.setPlaceholderCharacter('_'); // Placeholder para caracteres não digitados
@@ -1721,10 +2150,11 @@ public class Programacao extends javax.swing.JFrame {
             }
         }
     }
-    
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jBAdd;
     private javax.swing.JButton jBAddBloco;
+    private javax.swing.JButton jBAddRespOutro;
     private javax.swing.JButton jBAlterarBloco;
     private javax.swing.JButton jBBuscar;
     private javax.swing.JButton jBDemaisInfos;
@@ -1766,6 +2196,7 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JLabel jLHospedagem;
     private javax.swing.JLabel jLJanta;
     private javax.swing.JLabel jLNumero;
+    private javax.swing.JLabel jLObservacoes;
     private javax.swing.JLabel jLProg;
     private javax.swing.JLabel jLProgramDia;
     private javax.swing.JLabel jLResponsavel;
@@ -1787,5 +2218,7 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JScrollPane jSPSelecionados;
     private javax.swing.JTextField jTFAlmoco;
     private javax.swing.JTextField jTFJanta;
+    private javax.swing.JTextField jTFObservacoes;
+    private javax.swing.JTextField jTFRespOutro;
     // End of variables declaration//GEN-END:variables
 }

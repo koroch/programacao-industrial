@@ -28,7 +28,9 @@ public class CadastroCarro extends javax.swing.JFrame {
     }
 
     public List<Carro> getListaAtualizadaCarros() {
-        return new ArrayList<>(carrosCadastro);
+        List<Carro> lista = new ArrayList<>(carrosCadastro);
+        lista.sort((c1, c2) -> c1.getNome().compareTo(c2.getNome()));
+        return lista;
     }
     
     /**

@@ -83,15 +83,6 @@ public class DemaisInfosView extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Erro no arquivo usuarios.txt, talvez ele ainda esteja vazio!");
         }
     }
-    
-    private List<Usuario> stringToUser(String dado, Usuario usuarioHelper){
-        String[] dadosUsers = dado.replace("[", "").replace("]", "").split(",");
-        List<Usuario> users = Arrays.stream(dadosUsers)
-            .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
-            .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
-            .collect(Collectors.toList());
-        return users;
-    }
    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -401,10 +392,9 @@ public class DemaisInfosView extends javax.swing.JFrame {
             }
         }
 
-        String[] nomesUsuariosEquipe = todosNomesUsuarios.toArray(new String[0]);
+        String[] nomesUsuariosEquipe = todosNomesUsuarios.toArray(String[]::new);
         if (nomesUsuariosEquipe != null) {
             for (String item : nomesUsuariosEquipe) {
-                System.out.println("item: " + item);
                 if (dLMUsers.contains(item)) {
                     dLMUsers.removeElement(item);
                 }
@@ -633,7 +623,6 @@ public class DemaisInfosView extends javax.swing.JFrame {
             if(x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))){
                 exists = true;
 
-                String dataProgramacao = jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate());
                 List<Usuario> internosMec = new ArrayList<>();
                 if (dLMInternosMec.getSize() > 0) {
                     List<String> internosElecString = new ArrayList<>(
@@ -702,13 +691,9 @@ public class DemaisInfosView extends javax.swing.JFrame {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("demaisInfos.txt"))) {
             for (DemaisInfos demais : demaisAux) {
                 String idsMecanicos =  Optional.ofNullable(demais.getMecanicosInternos()).map(mecanicos -> mecanicos.stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","))).orElse("");
-                System.out.println(idsMecanicos);
                 String idsEletricistas = Optional.ofNullable(demais.getEletricistasInternos()).map(eletricistas -> eletricistas.stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","))).orElse("");
-                System.out.println(idsEletricistas);
                 String idFolgas =  Optional.ofNullable(demais.getFolgas()).map(folgas -> folgas.stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","))).orElse("");
-                System.out.println(idFolgas);
                 String idFerias =  Optional.ofNullable(demais.getFerias()).map(ferias -> ferias.stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","))).orElse("");
-                System.out.println(idFerias);
                 String demaisInfosSalvar = demais.getId()+"|"+demais.getDataProgramacao()+"|"+idsMecanicos+"|"+idsEletricistas+"|"+idFolgas+"|"+idFerias;
 
                 writer.write(demaisInfosSalvar);
@@ -727,7 +712,6 @@ public class DemaisInfosView extends javax.swing.JFrame {
     private void jBRemoverActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBRemoverActionPerformed
         String dataProgramacao = jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate());
         DemaisInfos escolhido = findByDataProgramacao(dataProgramacao);
-        System.out.println(escolhido);
         if(escolhido == null) {
             JOptionPane.showMessageDialog(null, "A busca pela data não encontrou nada!\nData disponível para criação de um novo bloco!");
             return;
@@ -747,13 +731,9 @@ public class DemaisInfosView extends javax.swing.JFrame {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("demaisInfos.txt"))) {
             for (DemaisInfos demaisInfo: demaisInfosCadastro) {
                 String idsMecanicos =  Optional.ofNullable(demaisInfo.getMecanicosInternos()).map(mecanicos -> mecanicos.stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","))).orElse("");
-                System.out.println(idsMecanicos);
                 String idsEletricistas = Optional.ofNullable(demaisInfo.getEletricistasInternos()).map(eletricistas -> eletricistas.stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","))).orElse("");
-                System.out.println(idsEletricistas);
                 String idFolgas =  Optional.ofNullable(demaisInfo.getFolgas()).map(folgas -> folgas.stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","))).orElse("");
-                System.out.println(idFolgas);
                 String idFerias =  Optional.ofNullable(demaisInfo.getFerias()).map(ferias -> ferias.stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","))).orElse("");
-                System.out.println(idFerias);
                 String demaisInfosSalvar = demaisInfo.getId()+"|"+demaisInfo.getDataProgramacao()+"|"+idsMecanicos+"|"+idsEletricistas+"|"+idFolgas+"|"+idFerias;
 
                 writer.write(demaisInfosSalvar);

@@ -32,7 +32,9 @@ public class CadastroCliente extends javax.swing.JFrame {
     }
     
     public List<Cliente> getListaAtualizadaClientes() {
-        return new ArrayList<>(clientesCadastro);
+        List<Cliente> lista = new ArrayList<>(clientesCadastro);
+        lista.sort((c1, c2) -> c1.getNome().compareTo(c2.getNome()));
+        return lista;
     }
 
     /**
@@ -314,7 +316,7 @@ public class CadastroCliente extends javax.swing.JFrame {
     }//GEN-LAST:event_jBCriarEmpActionPerformed1
     
     public boolean isStringValid(String string) {
-        return string.matches("^[0-9a-zA-ZÀ-ÿ]+( [0-9a-zA-ZÀ-ÿ]+)*$");
+        return string.matches("^[0-9a-zA-ZÀ-ÿ-]+( [0-9a-zA-ZÀ-ÿ-]+)*$");
     }
     
     public boolean validaNome(){
