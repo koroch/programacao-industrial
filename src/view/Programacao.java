@@ -8,6 +8,7 @@ import com.toedter.calendar.JDateChooser;
 import java.awt.Color;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.Image;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
@@ -57,13 +58,13 @@ import programacao.model.Hotel;
 public class Programacao extends javax.swing.JFrame {
     private String dataSalva = "";
     
+    private List<String> linhasArquivoBlocoProgramacaoAux = new ArrayList<>();
     private List<String> linhasArquivoBlocoProgramacao = new ArrayList<>();
     private List<Bloco> blocos = new ArrayList<>();
     public static int ultimoIdBloco = 0;
 
     private DefaultListModel<String> modeloSelec = new DefaultListModel<>();
     private DefaultListModel<String> listModel = new DefaultListModel<>();
-    public static ImageIcon notificacaoIco = new ImageIcon("../images/notification.png");
 
     private List<String> linhasArquivoUser = new ArrayList<>();
     private List<Usuario> usuarios = new ArrayList<>();
@@ -84,6 +85,8 @@ public class Programacao extends javax.swing.JFrame {
     private List<String> linhasArquivoDemaisInfos = new ArrayList<>();
     private List<DemaisInfos> demaisInfos = new ArrayList<>();
     public static int ultimoIdDemaisInfos = 0;
+    
+    private boolean olhoEstaClicado = false;
 
     public Programacao() {
         try {
@@ -107,6 +110,11 @@ public class Programacao extends javax.swing.JFrame {
         }
 
         initComponents();
+        
+        ImageIcon icone = new ImageIcon(getClass().getResource("/images/olho-fechado.png"));
+        Image imagemRedimensionada = icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        jBOlho.setIcon(new ImageIcon(imagemRedimensionada));
+        
         jBAddRespOutro.setEnabled(false);
         jBAddRespOutro.setVisible(false);
         jTFRespOutro.setEnabled(false);
@@ -150,8 +158,8 @@ public class Programacao extends javax.swing.JFrame {
 
             if (!usuarios.isEmpty()) {
                 ultimoIdUser = usuarios.getLast().getId();
-//                List<String> itensArray = listaDisponivelDoDia(jDCDataProgramacao);
-                String[] itensArray = usuarios.stream().map(Usuario::getNomeDeGuerra).sorted().toArray(String[]::new);
+                List<String> itensArray = listaDisponivelDoDia(jDCDataProgramacao);
+//                String[] itensArray = usuarios.stream().map(Usuario::getNomeDeGuerra).sorted().toArray(String[]::new);
                 for (String item : itensArray) {
                     listModel.addElement(item);
                 }
@@ -405,6 +413,7 @@ public class Programacao extends javax.swing.JFrame {
         jCBResponsavel = new javax.swing.JComboBox<>();
         jTFRespOutro = new javax.swing.JTextField();
         jBAddRespOutro = new javax.swing.JButton();
+        jBOlho = new javax.swing.JButton();
         jLFundo = new javax.swing.JLabel();
         jMenuBar = new javax.swing.JMenuBar();
         jMCadastros = new javax.swing.JMenu();
@@ -534,7 +543,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jCB.add(jBSub);
-        jBSub.setBounds(350, 170, 50, 30);
+        jBSub.setBounds(350, 180, 50, 30);
 
         jBAdd.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jBAdd.setText(">>");
@@ -989,6 +998,22 @@ public class Programacao extends javax.swing.JFrame {
         jCB.add(jBAddRespOutro);
         jBAddRespOutro.setBounds(610, 220, 30, 20);
 
+        jBOlho.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
+        jBOlho.setToolTipText("Ver todos colaboradores");
+        jBOlho.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        jBOlho.setBorderPainted(false);
+        jBOlho.setFocusable(false);
+        jBOlho.setRequestFocusEnabled(false);
+        jBOlho.setRolloverEnabled(false);
+        jBOlho.setVerifyInputWhenFocusTarget(false);
+        jBOlho.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBOlhoActionPerformed(evt);
+            }
+        });
+        jCB.add(jBOlho);
+        jBOlho.setBounds(350, 280, 50, 30);
+
         getContentPane().add(jCB);
         jCB.setBounds(0, 40, 1200, 580);
 
@@ -1128,38 +1153,37 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jMIClienteActionPerformed
 
     private void atualizarRemove(){
-        CadastroUsuario cadastroUser = new CadastroUsuario(usuarios);
-        if(!cadastroUser.getListaAtualizadaUsuarios().isEmpty()){
-            ultimoIdUser = cadastroUser.getListaAtualizadaUsuarios().getLast().getId();
-            String[] itensArray = cadastroUser.getListaAtualizadaUsuarios().stream().map(Usuario::getNomeDeGuerra).sorted().toArray(String[]::new);
-            List<String> itensNaoUsados = new ArrayList<>();
-            listModel.removeAllElements();
-            for (String item : itensArray) {
-                if(!IntStream.range(0, modeloSelec.getSize())
-                    .mapToObj(modeloSelec::getElementAt)
-                    .anyMatch(nome -> nome.equals(item))){
-                        itensNaoUsados.add(item);
-                }
-            }
-            
-            
-            for (String item : itensNaoUsados) {
-                listModel.addElement(item);
-            }
-            jLColab.setModel(listModel);
-        }
-        
-//        CadastroUsuario cadastroUser = new CadastroUsuario(usuarios);
-//        if (!cadastroUser.getListaAtualizadaUsuarios().isEmpty()) {
+//        CadastroUsuario cadastroUser = new CadastroUsuario(usuarios);;
+//        if(!cadastroUser.getListaAtualizadaUsuarios().isEmpty()){
 //            ultimoIdUser = cadastroUser.getListaAtualizadaUsuarios().getLast().getId();
-//            List<String> itensNaoUsados = listaDisponivelDoDia(jDCDataProgramacao);
-//            System.out.println(itensNaoUsados);
+//            String[] itensArray = cadastroUser.getListaAtualizadaUsuarios().stream().map(Usuario::getNomeDeGuerra).sorted().toArray(String[]::new);
+//            List<String> itensNaoUsados = new ArrayList<>();
 //            listModel.removeAllElements();
+//            for (String item : itensArray) {
+//                if(!IntStream.range(0, modeloSelec.getSize())
+//                    .mapToObj(modeloSelec::getElementAt)
+//                    .anyMatch(nome -> nome.equals(item))){
+//                        itensNaoUsados.add(item);
+//                }
+//            }
+//            
+//            
 //            for (String item : itensNaoUsados) {
 //                listModel.addElement(item);
 //            }
 //            jLColab.setModel(listModel);
 //        }
+        
+        CadastroUsuario cadastroUser = new CadastroUsuario(usuarios);
+        if (!cadastroUser.getListaAtualizadaUsuarios().isEmpty()) {
+            ultimoIdUser = cadastroUser.getListaAtualizadaUsuarios().getLast().getId();
+            List<String> itensNaoUsados = listaDisponivelDoDia(jDCDataProgramacao);
+            listModel.removeAllElements();
+            for (String item : itensNaoUsados) {
+                listModel.addElement(item);
+            }
+            jLColab.setModel(listModel);
+        }
     }
 
     private void atualizarListas() {
@@ -1254,14 +1278,14 @@ public class Programacao extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Erro no arquivo demaisInfos.txt, talvez ele ainda esteja vazio!");
         }
 
-        linhasArquivoBlocoProgramacao.clear();
+        linhasArquivoBlocoProgramacaoAux.clear();
         try (BufferedReader br = new BufferedReader(new FileReader("blocos.txt"))) {
             String linha;
             while ((linha = br.readLine()) != null) {
-                linhasArquivoBlocoProgramacao.add(linha);
+                linhasArquivoBlocoProgramacaoAux.add(linha);
             }
 
-            linhasArquivoBlocoProgramacao.forEach(elemento -> {
+            linhasArquivoBlocoProgramacaoAux.forEach(elemento -> {
                 String[] dados = elemento.split("\\|");
 
                 if (dados.length >= 6) {
@@ -1688,15 +1712,6 @@ public class Programacao extends javax.swing.JFrame {
         limpaCampos();
     }//GEN-LAST:event_jBLimparActionPerformed
 
-    private void limpaCamposSemDataProgramacao() {
-        jCBCliente.setSelectedIndex(0);
-        jCBCarro.setSelectedIndex(0);
-        modeloSelec.removeAllElements();
-        jCBResponsavel.removeAllItems();
-        listModel.removeAllElements();
-        atualizarListas();
-    }
-    
     private void limpaCampos() {
         jCBCliente.setSelectedIndex(0);
         jCBCarro.setSelectedIndex(0);
@@ -1976,7 +1991,6 @@ public class Programacao extends javax.swing.JFrame {
         } else if (!isVisitaComercial && !jFTFNumero.getText().equals("")) {
             
             String projeto = jFTFNumero.getText().equals("") ? "" : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
-            System.out.println("projeto "+projeto);
             for (Bloco x : blocos) {
                 if (x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)) {
                     recuperaDados(x);
@@ -2039,22 +2053,62 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jCBResponsavelActionPerformed
 
     private void jDCDataProgramacaoPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_jDCDataProgramacaoPropertyChange
-//        if (evt.getSource() instanceof JDateChooser && evt.getPropertyName().equals("date") && evt.getNewValue() instanceof Date) {
-//            Date novaData = (Date) evt.getNewValue();
-//            SimpleDateFormat formatoData = new SimpleDateFormat("dd/MM/yyyy");
-//            String dataFormatada = formatoData.format(novaData);
-//
-//            if (!dataSalva.equals(dataFormatada)) {
-//                listModel.removeAllElements();
-//                List<String> itensArray = listaDisponivelDoDia(jDCDataProgramacao);
-//                for (String item : itensArray) {
-//                    listModel.addElement(item);
-//                }
-//                jLColab.setModel(listModel);
-//            }
-//            dataSalva = dataFormatada;
-//        }
+        if (evt.getSource() instanceof JDateChooser && evt.getPropertyName().equals("date") && evt.getNewValue() instanceof Date) {
+            Date novaData = (Date) evt.getNewValue();
+            SimpleDateFormat formatoData = new SimpleDateFormat("dd/MM/yyyy");
+            String dataFormatada = formatoData.format(novaData);
+
+            if (!dataSalva.equals(dataFormatada)) {
+                listModel.removeAllElements();
+                List<String> itensArray = listaDisponivelDoDia(jDCDataProgramacao);
+                for (String item : itensArray) {
+                    listModel.addElement(item);
+                }
+                jLColab.setModel(listModel);
+            }
+            dataSalva = dataFormatada;
+        }
     }//GEN-LAST:event_jDCDataProgramacaoPropertyChange
+
+    private void jBOlhoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBOlhoActionPerformed
+        if(!olhoEstaClicado){
+            ImageIcon icone = new ImageIcon(getClass().getResource("/images/olho-aberto.png"));
+            Image imagemRedimensionada = icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+            jBOlho.setIcon(new ImageIcon(imagemRedimensionada));
+            olhoEstaClicado = true;
+            
+            CadastroUsuario cadastroUser = new CadastroUsuario(usuarios);;
+            ultimoIdUser = cadastroUser.getListaAtualizadaUsuarios().getLast().getId();
+            String[] itensArray = cadastroUser.getListaAtualizadaUsuarios().stream().map(Usuario::getNomeDeGuerra).sorted().toArray(String[]::new);
+            List<String> itensNaoUsados = new ArrayList<>();
+            listModel.removeAllElements();
+            for (String item : itensArray) {
+                if(!IntStream.range(0, modeloSelec.getSize())
+                    .mapToObj(modeloSelec::getElementAt)
+                    .anyMatch(nome -> nome.equals(item))){
+                        itensNaoUsados.add(item);
+                }
+            }
+            
+            
+            for (String item : itensNaoUsados) {
+                listModel.addElement(item);
+            }
+            jLColab.setModel(listModel);
+            
+        } else {
+            ImageIcon icone = new ImageIcon(getClass().getResource("/images/olho-fechado.png"));
+            Image imagemRedimensionada = icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+            jBOlho.setIcon(new ImageIcon(imagemRedimensionada));
+            olhoEstaClicado = false;
+            List<String> itensArray = listaDisponivelDoDia(jDCDataProgramacao);
+            listModel.removeAllElements();
+            for (String item : itensArray) {
+                listModel.addElement(item);
+            }
+            jLColab.setModel(listModel);
+        }
+    }//GEN-LAST:event_jBOlhoActionPerformed
 
     private void recuperaDados(Bloco x) {
 
@@ -2159,6 +2213,7 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JButton jBBuscar;
     private javax.swing.JButton jBDemaisInfos;
     private javax.swing.JButton jBLimpar;
+    private javax.swing.JButton jBOlho;
     private javax.swing.JButton jBRemover;
     private javax.swing.JButton jBSub;
     private javax.swing.JPanel jCB;
