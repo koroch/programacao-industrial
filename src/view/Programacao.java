@@ -87,7 +87,7 @@ public class Programacao extends javax.swing.JFrame {
     public static int ultimoIdDemaisInfos = 0;
     
     private boolean olhoEstaClicado = false;
-
+    
     public Programacao() {
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
@@ -110,6 +110,8 @@ public class Programacao extends javax.swing.JFrame {
         }
 
         initComponents();
+        
+        this.setIconImage(new ImageIcon(getClass().getResource("/images/icon.png")).getImage());
         
         ImageIcon icone = new ImageIcon(getClass().getResource("/images/olho-fechado.png"));
         Image imagemRedimensionada = icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
