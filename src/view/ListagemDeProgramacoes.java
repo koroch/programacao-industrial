@@ -11,6 +11,7 @@ import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -22,9 +23,12 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -70,12 +74,26 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                 // Obtém o componente padrão
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
+                if (isSelected) {
+                    c.setBackground(table.getSelectionBackground());
+                    c.setForeground(table.getSelectionForeground());
+                } else {
+                    c.setBackground(table.getBackground());
+                    c.setForeground(table.getForeground());
+                }
+                
                 // Verifica se a célula contém o texto específico para aplicar negrito
-                if (value != null && value.toString().startsWith("OBS:") || value != null && value.toString().startsWith("CLIENTE:") || (value != null && value.toString().startsWith("VISITA COMERCIAL"))) {
+                if (value != null && value.toString().startsWith("OBS:") || value != null && value.toString().startsWith("CLIENTE:") || (value != null && value.toString().startsWith("VISITA COMERCIAL")) || (value != null && value.toString().startsWith("MECÂNICOS INTERNOS:")) || (value != null && value.toString().startsWith("ELETRICISTAS INTERNOS:")) || (value != null && value.toString().startsWith("FOLGAS:")) || (value != null && value.toString().startsWith("FÉRIAS:"))) {
                         c.setFont(c.getFont().deriveFont(java.awt.Font.BOLD)); 
                 } else {
                     c.setFont(c.getFont().deriveFont(java.awt.Font.PLAIN)); 
                 }
+                
+                if (!jTFBuscar.getText().trim().equals("") && value != null 
+                && value.toString().toUpperCase().contains(jTFBuscar.getText().trim().toUpperCase())) {
+                c.setBackground(Color.BLUE);
+                c.setForeground(Color.WHITE);
+            }
 
                 return c;
             }
@@ -94,9 +112,36 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         .sorted(Comparator.reverseOrder()) 
         .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        datasUnicas.forEach(data -> jCBDatasUnicas.addItem(formatter.format(data)));
+        addDatas(datasUnicas);
     }
     
+    private void addDatas(Set<LocalDate> datasUnicas){
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        for (int i = 0; i < jCBDatasUnicas.getItemCount(); i++) {
+            String item = jCBDatasUnicas.getItemAt(i);
+            if (!datasUnicas.contains(LocalDate.parse(item, formatter))) {
+                jCBDatasUnicas.removeItem(item);
+                i--; 
+            }
+        }
+
+        datasUnicas.forEach(data -> {
+            String formattedData = formatter.format(data);
+            boolean existe = false;
+
+            for (int i = 0; i < jCBDatasUnicas.getItemCount(); i++) {
+                if (jCBDatasUnicas.getItemAt(i).equals(formattedData)) {
+                    existe = true;
+                    break;
+                }
+            }
+            
+            if (!existe) {
+                jCBDatasUnicas.addItem(formattedData);
+            }
+        });
+    }   
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -110,6 +155,8 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         JBXlsx = new javax.swing.JButton();
         jTFDiaSemana = new javax.swing.JTextField();
         jBCopiar = new javax.swing.JButton();
+        jBBuscar = new javax.swing.JButton();
+        jTFBuscar = new javax.swing.JTextField();
         jLFundo = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -134,7 +181,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jLProgramDia.setText("Escolha a programação do dia desejado:");
         jLProgramDia.setToolTipText("");
         jCB.add(jLProgramDia);
-        jLProgramDia.setBounds(340, 10, 280, 16);
+        jLProgramDia.setBounds(190, 10, 280, 16);
 
         jCBDatasUnicas.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -142,7 +189,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
             }
         });
         jCB.add(jCBDatasUnicas);
-        jCBDatasUnicas.setBounds(340, 30, 290, 30);
+        jCBDatasUnicas.setBounds(190, 30, 290, 30);
 
         jTProgramação.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -231,7 +278,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jTFDiaSemana.setRequestFocusEnabled(false);
         jTFDiaSemana.setVerifyInputWhenFocusTarget(false);
         jCB.add(jTFDiaSemana);
-        jTFDiaSemana.setBounds(640, 30, 170, 30);
+        jTFDiaSemana.setBounds(510, 30, 170, 30);
 
         jBCopiar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/transf.png"))); // NOI18N
         jBCopiar.setPreferredSize(new java.awt.Dimension(52, 52));
@@ -242,6 +289,39 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         });
         jCB.add(jBCopiar);
         jBCopiar.setBounds(860, 570, 52, 52);
+
+        jBBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/lupa.png"))); // NOI18N
+        jBBuscar.setToolTipText("Clique aqui para procurar pelo Nome ou Marca!");
+        jBBuscar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jBBuscar.setDefaultCapable(false);
+        jBBuscar.setFocusPainted(false);
+        jBBuscar.setFocusable(false);
+        jBBuscar.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jBBuscar.setIconTextGap(1);
+        jBBuscar.setMaximumSize(new java.awt.Dimension(120, 120));
+        jBBuscar.setMinimumSize(new java.awt.Dimension(120, 120));
+        jBBuscar.setName(""); // NOI18N
+        jBBuscar.setPreferredSize(new java.awt.Dimension(120, 120));
+        jBBuscar.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jBBuscarMouseClicked(evt);
+            }
+        });
+        jBBuscar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBBuscarActionPerformed(evt);
+            }
+        });
+        jCB.add(jBBuscar);
+        jBBuscar.setBounds(990, 20, 40, 40);
+
+        jTFBuscar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTFBuscarActionPerformed(evt);
+            }
+        });
+        jCB.add(jTFBuscar);
+        jTFBuscar.setBounds(710, 30, 270, 30);
 
         getContentPane().add(jCB);
         jCB.setBounds(0, 40, 1200, 630);
@@ -343,7 +423,11 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         for (int i = 0; i < jTProgramação.getRowCount(); i++) {
             Object valor = jTProgramação.getValueAt(i, 0);
             if (valor != null) {
-                texto.append(valor.toString());
+                if(valor.toString().contains("CLIENTE:") ||  valor.toString().startsWith("MECÂNICOS INTERNOS:") || valor.toString().startsWith("ELETRICISTAS INTERNOS:") || valor.toString().startsWith("FOLGAS:") || valor.toString().startsWith("FÉRIAS:")){
+                    texto.append("*"+valor.toString().trim()+"*");
+                }else{
+                    texto.append(valor.toString());
+                }
             } else {
                 texto.append("");
             }
@@ -356,6 +440,137 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         JOptionPane.showMessageDialog(null, "Texto copiado para área de transferência!");
     }//GEN-LAST:event_jBCopiarActionPerformed
 
+    private void jBBuscarMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jBBuscarMouseClicked
+
+    }//GEN-LAST:event_jBBuscarMouseClicked
+
+    private void jBBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBBuscarActionPerformed
+        buscarAcao();
+    }//GEN-LAST:event_jBBuscarActionPerformed
+
+    private void jTFBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTFBuscarActionPerformed
+        buscarAcao();
+    }//GEN-LAST:event_jTFBuscarActionPerformed
+
+    
+    public void buscarAcao(){
+        List<String> stringBusca = new ArrayList<>();
+
+        // Agrupar os blocos por data
+        Map<String, StringBuilder> blocosPorData = new HashMap<>();
+
+        // Iterar sobre os blocos para concatenar os dados por data e coletar as datas
+        blocos.stream()
+            .forEach(bloco -> {
+                String dataProgramacao = bloco.getDataProgramacao();
+                StringBuilder sb = blocosPorData.computeIfAbsent(dataProgramacao, k -> new StringBuilder());
+
+                sb.append("Data Programação: ").append(dataProgramacao).append(" ");
+
+                String carretao = "";
+                if (!"N/A".equals(bloco.getCarretao()))    
+                    carretao = " com " + bloco.getCarretao().toLowerCase();
+
+                if (bloco.getFinalidade().equals("VISITA COMERCIAL")) {
+                    sb.append("Finalidade: ").append(bloco.getFinalidade()).append(" ");
+                } else {
+                    String finalidadeRef = bloco.getFinalidade().toUpperCase().equals("OCULTAR") ? "" : " - \"" + bloco.getFinalidade().toUpperCase() + "\"";
+                    sb.append("CLIENTE: ").append(bloco.getCliente() != null ? bloco.getCliente().getNome() : "N/A").append(finalidadeRef).append(" ");
+                }
+
+                sb.append("Equipe: ").append(bloco.getEquipe().stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", "))).append(" ");
+
+                if (bloco.getProjeto() != null && !bloco.getProjeto().isEmpty() && !"N/A".equals(bloco.getProjeto())) {
+                    sb.append("Projeto: ").append(bloco.getProjeto()).append(" ");
+                }
+
+                if (!bloco.getFinalidade().equals("VISITA COMERCIAL")) {
+                    sb.append("Responsável do Trabalho: ").append(bloco.getResponsavelDoTrabalho() != null ? bloco.getResponsavelDoTrabalho().getNomeDeGuerra() : "N/A").append(" ");
+                }
+
+                sb.append("Carro: ").append(bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A").append(carretao).append(" ");
+                sb.append("Data de Saída: ").append(bloco.getDataDeSaida()).append(" ");
+                sb.append("Data de Retorno: ").append(bloco.getDataDeRetorno()).append(" ");
+                sb.append("Horário de Saída: ").append(bloco.getHorarioDeSaida()).append("H ");
+
+                if (!"Horário de Trabalho: H AS Hs Hs AS Hs".equals("Horário de Trabalho: " + bloco.getHorarioDeTrabalhoInicio() + "H AS " + bloco.getHorarioDeTrabalhoFimMeioDia() + "Hs " + bloco.getHorarioDeTrabalhoInicioMeioDia() + "Hs AS " + bloco.getHorarioDeTrabalhoFim() + "Hs")) {
+                    sb.append("Horário de Trabalho: ").append(bloco.getHorarioDeTrabalhoInicio()).append("H AS ")
+                      .append(bloco.getHorarioDeTrabalhoFimMeioDia()).append("Hs ")
+                      .append(bloco.getHorarioDeTrabalhoInicioMeioDia()).append("Hs AS ")
+                      .append(bloco.getHorarioDeTrabalhoFim()).append("Hs ");
+                }
+
+                if (bloco.getAlmoco() != null && !bloco.getAlmoco().equals("N/A")) {
+                    sb.append("Almoço: ").append(bloco.getAlmoco()).append(" ");
+                }
+
+                if (bloco.getJanta() != null && !bloco.getJanta().equals("N/A")) {
+                    sb.append("Janta: ").append(bloco.getJanta()).append(" ");
+                }
+
+                if (bloco.getHospedagem() != null) {
+                    sb.append("Hospedagem: ").append(bloco.getHospedagem().getNomeComCidadeEEstado()).append(" - ").append(bloco.getHospedagem().getEndereco()).append(" ");
+                }
+
+                if (bloco.getObservacoes() != null && !bloco.getObservacoes().equals("N/A")) {
+                    sb.append("OBS: ").append(bloco.getObservacoes().toUpperCase()).append(" ");
+                }
+            });
+
+        // Agora, para cada data em blocosPorData, vamos adicionar as informações de `demaisInfos`
+        blocosPorData.forEach((data, sb) -> {
+            demaisInfos.stream()
+                .filter(info -> data.equals(info.getDataProgramacao()))  // Verifica se a data bate com a de `demaisInfos`
+                .findFirst()
+                .ifPresent(info -> {
+                    sb.append("Data Programação: ").append(info.getDataProgramacao()).append(" ");
+
+                    if (!Optional.ofNullable(info.getMecanicosInternos()).orElse(new ArrayList<>()).isEmpty()) {
+                        sb.append("MECÂNICOS INTERNOS: ").append(info.getMecanicosInternos().stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", "))).append(" ");
+                    }
+
+                    if (!Optional.ofNullable(info.getEletricistasInternos()).orElse(new ArrayList<>()).isEmpty()) {
+                        sb.append("ELETRICISTAS INTERNOS: ").append(info.getEletricistasInternos().stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", "))).append(" ");
+                    }
+
+                    if (!Optional.ofNullable(info.getFolgas()).orElse(new ArrayList<>()).isEmpty()) {
+                        sb.append("FOLGAS: ").append(info.getFolgas().stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", "))).append(" ");
+                    }
+
+                    if (!Optional.ofNullable(info.getFerias()).orElse(new ArrayList<>()).isEmpty()) {
+                        sb.append("FÉRIAS: ").append(info.getFerias().stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", "))).append(" ");
+                    }
+                });
+            stringBusca.add(sb.toString().trim());
+        });
+
+        Set<String> datasDeBusca = new HashSet<>();
+
+        for (String stringb : stringBusca) {
+            if (stringb.contains(jTFBuscar.getText().toUpperCase())) {
+                blocos.stream()
+                    .filter(bloco -> stringb.contains("Data Programação: " + bloco.getDataProgramacao()))
+                    .forEach(bloco -> datasDeBusca.add(bloco.getDataProgramacao()));
+                demaisInfos.stream()
+                    .filter(info -> stringb.contains("Data Programação: " + info.getDataProgramacao()))
+                    .forEach(info -> datasDeBusca.add(info.getDataProgramacao()));
+            }
+        }
+
+        if(datasDeBusca.isEmpty()){
+            JOptionPane.showMessageDialog(null, "Nada encontrado. Listagem não atualizada!");
+            return;
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        Set<LocalDate> localDates = datasDeBusca.stream()
+            .map(date -> LocalDate.parse(date, formatter)) // Converte cada String para LocalDate
+            .collect(Collectors.toCollection(HashSet::new));
+
+        addDatas(localDates);
+        configurarModeloTabela();
+    }
+    
     public void populateTable(String dataEscolhida) {
         DefaultTableModel model = (DefaultTableModel) jTProgramação.getModel();
         model.setRowCount(0); // Limpa as linhas antes de adicionar novas
@@ -394,7 +609,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                     model.addRow(new Object[] { "Janta: " + bloco.getJanta() });
                 }
                 if(bloco.getHospedagem() != null){
-                    model.addRow(new Object[] { "Hospedagem: " + (bloco.getHospedagem().getNomeComCidadeEEstado()) });
+                    model.addRow(new Object[] { "Hospedagem: " + (bloco.getHospedagem().getNomeComCidadeEEstado()) + " - " + (bloco.getHospedagem().getEndereco()) });
                 }
                 if(bloco.getObservacoes()!=null&&!bloco.getObservacoes().equals("")&&!bloco.getObservacoes().equals("null")&&!bloco.getObservacoes().equals("N/A")){
                     model.addRow(new Object[] { "OBS: " + bloco.getObservacoes().toUpperCase() });
@@ -408,16 +623,20 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
             .findFirst()
             .ifPresent(info -> {
                 if(!Optional.ofNullable(info.getMecanicosInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")).equals("")){
-                    model.addRow(new Object[] { "Mecânicos Internos: " + Optional.ofNullable(info.getMecanicosInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
+                    model.addRow(new Object[] { "MECÂNICOS INTERNOS: " });
+                    model.addRow(new Object[] { Optional.ofNullable(info.getMecanicosInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
                 }
                 if(!Optional.ofNullable(info.getEletricistasInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")).equals("")){
-                    model.addRow(new Object[] { "Eletricistas Internos: " + Optional.ofNullable(info.getEletricistasInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
+                    model.addRow(new Object[] { "ELETRICISTAS INTERNOS: " });
+                    model.addRow(new Object[] { Optional.ofNullable(info.getEletricistasInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
                 }
                 if(!Optional.ofNullable(info.getFolgas()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")).equals("")){
-                    model.addRow(new Object[] { "Folgas: " + Optional.ofNullable(info.getFolgas()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
+                    model.addRow(new Object[] { "FOLGAS: " });
+                    model.addRow(new Object[] { Optional.ofNullable(info.getFolgas()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
                 }
                 if(!Optional.ofNullable(info.getFerias()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")).equals("")){
-                    model.addRow(new Object[] { "Férias: " + Optional.ofNullable(info.getFerias()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
+                    model.addRow(new Object[] { "FÉRIAS: " });
+                    model.addRow(new Object[] { Optional.ofNullable(info.getFerias()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
                 }
                 model.addRow(new Object[] { "" });
             });
@@ -427,6 +646,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton JBXlsx;
+    private javax.swing.JButton jBBuscar;
     private javax.swing.JButton jBCopiar;
     private javax.swing.JButton jBPDF;
     private javax.swing.JPanel jCB;
@@ -435,6 +655,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
     private javax.swing.JLabel jLProg;
     private javax.swing.JLabel jLProgramDia;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JTextField jTFBuscar;
     private javax.swing.JTextField jTFDiaSemana;
     private javax.swing.JTable jTProgramação;
     // End of variables declaration//GEN-END:variables
