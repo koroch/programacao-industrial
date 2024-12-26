@@ -32,8 +32,9 @@ public class Bloco {
     private String janta;
     private Hotel hospedagem;
     private String observacoes;
+    private String carroExtra;
 
-    public Bloco(int Id, String dataProgramacao, String projeto, Cliente cliente, String finalidade, List<Usuario> equipe, Usuario responsavelDoTrabalho, Carro carro, String carretao, String dataDeSaida, String dataDeRetorno, String horarioDeSaida, String horarioDeTrabalhoInicio, String horarioDeTrabalhoFimMeioDia, String horarioDeTrabalhoInicioMeioDia, String horarioDeTrabalhoFim, String almoco, String janta, Hotel hospedagem, String observacoes) {
+    public Bloco(int Id, String dataProgramacao, String projeto, Cliente cliente, String finalidade, List<Usuario> equipe, Usuario responsavelDoTrabalho, Carro carro, String carretao, String dataDeSaida, String dataDeRetorno, String horarioDeSaida, String horarioDeTrabalhoInicio, String horarioDeTrabalhoFimMeioDia, String horarioDeTrabalhoInicioMeioDia, String horarioDeTrabalhoFim, String almoco, String janta, Hotel hospedagem, String observacoes, String carroExtra) {
         this.Id = Id;
         this.dataProgramacao = dataProgramacao;
         this.projeto = projeto;
@@ -54,9 +55,10 @@ public class Bloco {
         this.janta = janta;
         this.hospedagem = hospedagem;
         this.observacoes = observacoes;
+        this.carroExtra = carroExtra;
     }
 
-    public Bloco(String dataProgramacao, String projeto, Cliente cliente, String finalidade, List<Usuario> equipe, Usuario responsavelDoTrabalho, Carro carro, String carretao, String dataDeSaida, String dataDeRetorno, String horarioDeSaida, String horarioDeTrabalhoInicio, String horarioDeTrabalhoFimMeioDia, String horarioDeTrabalhoInicioMeioDia, String horarioDeTrabalhoFim, String almoco, String janta, Hotel hospedagem, String observacoes) {
+    public Bloco(String dataProgramacao, String projeto, Cliente cliente, String finalidade, List<Usuario> equipe, Usuario responsavelDoTrabalho, Carro carro, String carretao, String dataDeSaida, String dataDeRetorno, String horarioDeSaida, String horarioDeTrabalhoInicio, String horarioDeTrabalhoFimMeioDia, String horarioDeTrabalhoInicioMeioDia, String horarioDeTrabalhoFim, String almoco, String janta, Hotel hospedagem, String observacoes, String carroExtra) {
         this.Id = ultimoIdBloco + 1;
         ultimoIdBloco++;
         this.dataProgramacao = dataProgramacao;
@@ -78,6 +80,15 @@ public class Bloco {
         this.janta = janta;
         this.hospedagem = hospedagem;
         this.observacoes = observacoes;
+        this.carroExtra = carroExtra;
+    }
+
+    public String getCarroExtra() {
+        return carroExtra;
+    }
+
+    public void setCarroExtra(String carroExtra) {
+        this.carroExtra = carroExtra;
     }
 
     public Bloco getById(int id, List<Bloco> blocos){
@@ -246,6 +257,6 @@ public class Bloco {
 
     @Override
     public String toString() {
-        return Id + "|" + dataProgramacao + "|" + projeto + "|" + cliente + "|" + equipe + "|" + responsavelDoTrabalho + "|" + carro + "|" + dataDeSaida + "|" + dataDeRetorno + "|" + horarioDeSaida + "|" + horarioDeTrabalhoInicio + "|" + horarioDeTrabalhoFimMeioDia + "|" + horarioDeTrabalhoInicioMeioDia + "|" + horarioDeTrabalhoFim + "|" + almoco + "|" + janta + "|" + hospedagem + "|" + observacoes;
+        return Id + "|" + dataProgramacao + "|" + projeto + "|" + cliente + "|" + equipe + "|" + responsavelDoTrabalho + "|" + carro + "|" + dataDeSaida + "|" + dataDeRetorno + "|" + horarioDeSaida + "|" + horarioDeTrabalhoInicio + "|" + horarioDeTrabalhoFimMeioDia + "|" + horarioDeTrabalhoInicioMeioDia + "|" + horarioDeTrabalhoFim + "|" + almoco + "|" + janta + "|" + hospedagem + "|" + observacoes + "|" + carroExtra;
     }
 }

@@ -53,6 +53,14 @@ public class CadastroCarro extends javax.swing.JFrame {
         jTFNome = new javax.swing.JTextField();
         jLNome = new javax.swing.JLabel();
         jFTFPlaca = new javax.swing.JFormattedTextField();
+        jLImei = new javax.swing.JLabel();
+        jFTFImei = new javax.swing.JFormattedTextField();
+        jTFkmAtual = new javax.swing.JTextField();
+        jLkmatual = new javax.swing.JLabel();
+        jTFKmUltimaTroca = new javax.swing.JTextField();
+        jLKmUltimaTroca = new javax.swing.JLabel();
+        jFTFDataKmAtual = new javax.swing.JFormattedTextField();
+        jLDataKmAtual = new javax.swing.JLabel();
         jLFundo = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -87,7 +95,7 @@ public class CadastroCarro extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jBRemoverUser);
-        jBRemoverUser.setBounds(260, 250, 110, 30);
+        jBRemoverUser.setBounds(260, 380, 110, 30);
 
         jBCriarUser.setBackground(new java.awt.Color(204, 204, 204));
         jBCriarUser.setText("Adicionar");
@@ -98,7 +106,7 @@ public class CadastroCarro extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jBCriarUser);
-        jBCriarUser.setBounds(40, 250, 110, 30);
+        jBCriarUser.setBounds(40, 380, 110, 30);
 
         jBAlterarUser.setBackground(new java.awt.Color(204, 204, 204));
         jBAlterarUser.setText("Alterar");
@@ -109,7 +117,7 @@ public class CadastroCarro extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jBAlterarUser);
-        jBAlterarUser.setBounds(150, 250, 110, 30);
+        jBAlterarUser.setBounds(150, 380, 110, 30);
 
         jBBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/lupa.png"))); // NOI18N
         jBBuscar.setToolTipText("Clique aqui para procurar pelo Nome ou Marca!");
@@ -145,7 +153,7 @@ public class CadastroCarro extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jBLimpar);
-        jBLimpar.setBounds(280, 210, 90, 30);
+        jBLimpar.setBounds(280, 340, 90, 30);
 
         jTFNome.setToolTipText("Informe o nome ou como chamam o carro!");
         jTFNome.addActionListener(new java.awt.event.ActionListener() {
@@ -169,13 +177,63 @@ public class CadastroCarro extends javax.swing.JFrame {
         }
         jFTFPlaca.setToolTipText("Coloque uma Placa única. Não poderá modificar depois!");
         getContentPane().add(jFTFPlaca);
-        jFTFPlaca.setBounds(40, 170, 330, 30);
+        jFTFPlaca.setBounds(40, 170, 100, 30);
+
+        jLImei.setForeground(new java.awt.Color(255, 255, 255));
+        jLImei.setText("IMEI do Rastreador:");
+        getContentPane().add(jLImei);
+        jLImei.setBounds(160, 150, 140, 16);
+
+        try {
+            jFTFImei.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.MaskFormatter("###############")));
+        } catch (java.text.ParseException ex) {
+            ex.printStackTrace();
+        }
+        getContentPane().add(jFTFImei);
+        jFTFImei.setBounds(160, 170, 210, 30);
+
+        jTFkmAtual.setToolTipText("Informe a marca do carro!");
+        jTFkmAtual.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTFkmAtualActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jTFkmAtual);
+        jTFkmAtual.setBounds(40, 230, 160, 30);
+
+        jLkmatual.setForeground(new java.awt.Color(255, 255, 255));
+        jLkmatual.setText("KM Atual");
+        getContentPane().add(jLkmatual);
+        jLkmatual.setBounds(40, 210, 140, 16);
+
+        jTFKmUltimaTroca.setToolTipText("Informe a marca do carro!");
+        jTFKmUltimaTroca.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTFKmUltimaTrocaActionPerformed(evt);
+            }
+        });
+        getContentPane().add(jTFKmUltimaTroca);
+        jTFKmUltimaTroca.setBounds(210, 230, 160, 30);
+
+        jLKmUltimaTroca.setForeground(new java.awt.Color(255, 255, 255));
+        jLKmUltimaTroca.setText("KM última troca");
+        getContentPane().add(jLKmUltimaTroca);
+        jLKmUltimaTroca.setBounds(210, 210, 140, 16);
+
+        jFTFDataKmAtual.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.DateFormatter(java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT))));
+        getContentPane().add(jFTFDataKmAtual);
+        jFTFDataKmAtual.setBounds(40, 290, 160, 30);
+
+        jLDataKmAtual.setForeground(new java.awt.Color(255, 255, 255));
+        jLDataKmAtual.setText("Data da KM Atual");
+        getContentPane().add(jLDataKmAtual);
+        jLDataKmAtual.setBounds(40, 270, 140, 16);
 
         jLFundo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/tela_de_fundo.jpeg"))); // NOI18N
         getContentPane().add(jLFundo);
-        jLFundo.setBounds(-230, -290, 710, 660);
+        jLFundo.setBounds(-230, -210, 710, 700);
 
-        setSize(new java.awt.Dimension(426, 334));
+        setSize(new java.awt.Dimension(426, 466));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -209,6 +267,10 @@ public class CadastroCarro extends javax.swing.JFrame {
                 jTFNome.setText("");
                 jTFMarca.setText("");
                 jFTFPlaca.setText("");
+                jFTFImei.setText("");
+                jTFkmAtual.setText("");
+                jFTFDataKmAtual.setText("");
+                jTFKmUltimaTroca.setText("");
                 return;
             } catch (IOException e ) {
                 JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
@@ -225,7 +287,10 @@ public class CadastroCarro extends javax.swing.JFrame {
             jTFNome.setText("");
             jTFMarca.setText("");
             jFTFPlaca.setText("");
-            
+            jFTFImei.setText("");
+            jTFkmAtual.setText("");
+            jFTFDataKmAtual.setText("");
+            jTFKmUltimaTroca.setText("");
         } catch (IOException e ) {
             JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
         }
@@ -239,7 +304,7 @@ public class CadastroCarro extends javax.swing.JFrame {
         if(!validaPlacaUnica())
             return;
         
-        Carro carro = new Carro(jTFNome.getText().toUpperCase(),jTFMarca.getText().toUpperCase(),jFTFPlaca.getText().toUpperCase());
+        Carro carro = new Carro(jTFNome.getText().toUpperCase(),jTFMarca.getText().toUpperCase(),jFTFPlaca.getText().toUpperCase(), jFTFImei.getText(), Integer.parseInt(jTFkmAtual.getText()), jFTFDataKmAtual.getText(), Integer.parseInt(jTFKmUltimaTroca.getText()), jFTFDataKmAtual.getText());
         carrosCadastro.add(carro);
         System.out.println("User"+ carro.toString());
         
@@ -250,6 +315,10 @@ public class CadastroCarro extends javax.swing.JFrame {
             jTFNome.setText("");
             jTFMarca.setText("");
             jFTFPlaca.setText("");
+            jFTFImei.setText("");
+            jTFkmAtual.setText("");
+            jFTFDataKmAtual.setText("");
+            jTFKmUltimaTroca.setText("");
         } catch (IOException e ) {
             JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
         }
@@ -263,6 +332,10 @@ public class CadastroCarro extends javax.swing.JFrame {
             if(x.getPlaca().toUpperCase().equals(jFTFPlaca.getText().toUpperCase())){
                 x.setNome(jTFNome.getText().toUpperCase());
                 x.setMarca(jTFMarca.getText().toUpperCase());
+                x.setImei_rastreador(jFTFImei.getText());
+                x.setKm_atual(Integer.parseInt(jTFkmAtual.getText()));
+                x.setData_km_atual(jFTFDataKmAtual.getText());
+                x.setKm_ultima_troca(Integer.parseInt(jTFKmUltimaTroca.getText()));
                 break;
             }
         }
@@ -277,7 +350,10 @@ public class CadastroCarro extends javax.swing.JFrame {
             jTFNome.setText("");
             jTFMarca.setText("");
             jFTFPlaca.setText("");
-            
+            jFTFImei.setText("");
+            jTFkmAtual.setText("");
+            jFTFDataKmAtual.setText("");
+            jTFKmUltimaTroca.setText("");
         } catch (IOException e ) {
             JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
         }
@@ -290,6 +366,10 @@ public class CadastroCarro extends javax.swing.JFrame {
                     jTFNome.setText(x.getNome());
                     jTFMarca.setText(x.getMarca());
                     jFTFPlaca.setText(x.getPlaca());
+                    jFTFImei.setText(x.getImei_rastreador());
+                    jTFkmAtual.setText(String.valueOf(x.getKm_atual()));
+                    jFTFDataKmAtual.setText(x.getData_km_atual());
+                    jTFKmUltimaTroca.setText(String.valueOf(x.getKm_ultima_troca()));
                     break;
                 }
             }
@@ -321,11 +401,23 @@ public class CadastroCarro extends javax.swing.JFrame {
         jTFNome.setText("");
         jTFMarca.setText("");
         jFTFPlaca.setText("");
+        jFTFImei.setText("");
+        jTFkmAtual.setText("");
+        jFTFDataKmAtual.setText("");
+        jTFKmUltimaTroca.setText("");
     }//GEN-LAST:event_jBLimparActionPerformed
 
     private void jTFNomeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTFNomeActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jTFNomeActionPerformed
+
+    private void jTFkmAtualActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTFkmAtualActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTFkmAtualActionPerformed
+
+    private void jTFKmUltimaTrocaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTFKmUltimaTrocaActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTFKmUltimaTrocaActionPerformed
 
     public boolean isStringValid(String string) {
         return string.matches("^[a-zA-ZÀ-ÿ]+( [a-zA-ZÀ-ÿ]+)*$");
@@ -375,12 +467,20 @@ public class CadastroCarro extends javax.swing.JFrame {
     private javax.swing.JButton jBCriarUser;
     private javax.swing.JButton jBLimpar;
     private javax.swing.JButton jBRemoverUser;
+    private javax.swing.JFormattedTextField jFTFDataKmAtual;
+    private javax.swing.JFormattedTextField jFTFImei;
     private javax.swing.JFormattedTextField jFTFPlaca;
+    private javax.swing.JLabel jLDataKmAtual;
     private javax.swing.JLabel jLFundo;
+    private javax.swing.JLabel jLImei;
+    private javax.swing.JLabel jLKmUltimaTroca;
     private javax.swing.JLabel jLMarca;
     private javax.swing.JLabel jLNome;
     private javax.swing.JLabel jLNomeWar;
+    private javax.swing.JLabel jLkmatual;
+    private javax.swing.JTextField jTFKmUltimaTroca;
     private javax.swing.JTextField jTFMarca;
     private javax.swing.JTextField jTFNome;
+    private javax.swing.JTextField jTFkmAtual;
     // End of variables declaration//GEN-END:variables
 }

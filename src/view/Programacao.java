@@ -6,9 +6,13 @@ package view;
 
 import com.toedter.calendar.JDateChooser;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Toolkit;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
@@ -20,6 +24,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -28,6 +34,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -89,6 +98,20 @@ public class Programacao extends javax.swing.JFrame {
     private boolean olhoEstaClicado = false;
     
     public Programacao() {
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        Dimension screenSize = toolkit.getScreenSize();
+
+        // Obtém a altura da barra de tarefas
+        int taskBarHeight = (int) toolkit.getScreenSize().getHeight() - (int) java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getBounds().getHeight();
+
+        // A largura da tela deve ser a total, sem subtração
+        int screenWidth = screenSize.width;
+        int screenHeight = screenSize.height;
+
+        // Ajusta o tamanho da janela para maximizar sem tampar a barra de tarefas
+        this.setSize(screenWidth, screenHeight - taskBarHeight);  // Ajusta para a largura total e a altura visível
+        this.setLocation(0, 0); 
+        
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
             // Configurando propriedades do Nimbus para JComboBox
@@ -110,7 +133,31 @@ public class Programacao extends javax.swing.JFrame {
         }
 
         initComponents();
+        jLbAlert.setVisible(false);
+        jLbAlertaLaranja.setVisible(false);
+        jLbVermelho.setVisible(false);
         
+        maximizarJanela();
+
+        // Alinhar horizontalmente o JPanel após o JFrame ser exibido
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                alinharHorizontalmenteJPanel(); // Alinha após o JFrame ser exibido
+            }
+
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                alinharHorizontalmenteJPanel(); // Recalcula ao redimensionar
+            }
+        });
+        // Listener para o redimensionamento da janela
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                ajustarImagemDeFundo(); // Ajuste ao redimensionar a janela
+            }
+        });
         this.setIconImage(new ImageIcon(getClass().getResource("/images/icon.png")).getImage());
         
         ImageIcon icone = new ImageIcon(getClass().getResource("/images/olho-fechado.png"));
@@ -121,6 +168,8 @@ public class Programacao extends javax.swing.JFrame {
         jBAddRespOutro.setVisible(false);
         jTFRespOutro.setEnabled(false);
         jTFRespOutro.setVisible(false);
+        jCBCarroExtra.setEnabled(false);
+        jCBCarroExtra.setVisible(false);
         dataSalva = jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate());
         
         DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.US);
@@ -184,9 +233,13 @@ public class Programacao extends javax.swing.JFrame {
                         Integer.parseInt(dados[0].trim()),
                         dados[1].trim(),
                         (qtdArray >= 3 ? dados[2].trim() : null),
-                        (qtdArray >= 4 ? dados[3].trim() : null)
+                        (qtdArray >= 4 ? dados[3].trim() : null),
+                        (qtdArray >= 5 ? dados[4].trim() : null),
+                        (qtdArray >= 6 && dados[5].trim() != null && !dados[5].trim().isEmpty() ? Integer.parseInt(dados[5].trim()) : null),
+                        (qtdArray >= 7 ? dados[6].trim() : null),
+                        (qtdArray >= 8 && dados[7].trim() != null && !dados[7].trim().isEmpty() ? Integer.parseInt(dados[7].trim()) : null),
+                        (qtdArray >= 9 ? dados[8].trim() : null)
                 ));
-
             });
 
             if (!carros.isEmpty()) {
@@ -295,7 +348,8 @@ public class Programacao extends javax.swing.JFrame {
                             dados[16].trim(), //alm
                             dados[17].trim(), //jan
                             dados[18].trim().equals("null") ? null : new Hotel().getById(Integer.parseInt(dados[18].trim()), hoteis), //hotel
-                            (qtdArray >= 20 ? dados[19].trim() : null)
+                            (qtdArray >= 20 ? dados[19].trim() : null),
+                            (qtdArray >= 21 ? dados[20].trim() : null)
                     ));
                 }
             });
@@ -308,8 +362,94 @@ public class Programacao extends javax.swing.JFrame {
         }
         
         atualizarDemaisInfos();
+        agendarChamada();
+    }
+    
+    public void agendarChamada() {
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        ManutencaoView manutencao = new ManutencaoView(carros);
+        
+        // Agendar a execução da função a cada 30 segundos
+        scheduler.scheduleAtFixedRate(() -> {
+            if(manutencao.getQtdAletasVermelho(carros) > 0){
+                jLbAlert.setText("Atenção, faça troca de óleo!");
+                jLbAlert.setVisible(true);
+                jLbVermelho.setVisible(true);
+            } else if( manutencao.getQtdAletasLaranja(carros) > 0) {
+                jLbAlert.setText("Revise o óleo dos carros!");
+                jLbAlert.setVisible(true);
+                jLbAlertaLaranja.setVisible(true);
+            } else {
+                jLbAlert.setVisible(false);
+                jLbAlertaLaranja.setVisible(false);
+                jLbVermelho.setVisible(false);
+            }
+            
+            System.out.println("Vermelho: "+manutencao.getQtdAletasVermelho(carros));
+            System.out.println("Laranja: "+manutencao.getQtdAletasLaranja(carros));
+        }, 0, 30, TimeUnit.SECONDS);
+    }
+    
+    private void maximizarJanela() {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(
+            GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration()
+        );
+
+        // Calcula a largura e altura disponíveis (sem a barra de tarefas)
+        int screenWidth = screenSize.width;
+        int screenHeight = screenSize.height - screenInsets.bottom;
+
+        // Ajusta o tamanho do JFrame
+        this.setSize(screenWidth, screenHeight);
+        this.setLocation(0, 0); // Posiciona no canto superior esquerdo
+    }
+    
+    private void alinharHorizontalmenteJPanel() {
+        
+            int frameWidth = this.getContentPane().getWidth();
+
+            int panelWidth = jPFundo.getWidth();
+            int currentY = jPFundo.getY(); // Mantém a posição vertical atual
+
+            // Calcula a posição horizontal para centralizar
+            int x = (frameWidth - panelWidth) / 2;
+
+            jPFundo.setBounds(x, currentY, panelWidth, jPFundo.getHeight()); // Atualiza apenas a posição horizontal
+            jPFundo.revalidate();
+            jPFundo.repaint();
+        
     }
 
+     private void ajustarImagemDeFundo() {
+        if (this.getWidth() > 0 && this.getHeight() > 0) {
+            // Obtém o ícone configurado manualmente
+            ImageIcon originalIcon = (ImageIcon) jLFundo.getIcon();
+            if (originalIcon == null) {
+                System.out.println("Erro: Nenhum ícone configurado no JLabel.");
+                return;
+            }
+
+            // Redimensiona a imagem conforme o tamanho da janela
+            Image scaledImage = originalIcon.getImage().getScaledInstance(this.getWidth(), this.getHeight(), Image.SCALE_SMOOTH);
+
+            // Atualiza o ícone do JLabel
+            jLFundo.setIcon(new ImageIcon(scaledImage));
+
+            // Ajusta o tamanho do JLabel para cobrir toda a área do JFrame
+            jLFundo.setBounds(0, 0, this.getWidth(), this.getHeight());
+            jLFundo.repaint();
+        }
+    }
+    
+    private void configurarImagemDeFundo() {
+        // Configura o JLabel com a imagem configurada na propriedade "icon"
+        if (jLFundo.getIcon() != null) {
+            ajustarImagemDeFundo();  // Ajuste inicial da imagem de fundo
+        } else {
+            System.out.println("Erro: Nenhum ícone configurado no JLabel.");
+        }
+    }
 
     private void atualizarDemaisInfos() {
         try (BufferedReader br = new BufferedReader(new FileReader("demaisInfos.txt"))) {
@@ -361,7 +501,7 @@ public class Programacao extends javax.swing.JFrame {
     private void initComponents() {
 
         jLProg = new javax.swing.JLabel();
-        jCB = new javax.swing.JPanel();
+        jPFundo = new javax.swing.JPanel();
         jLNumero = new javax.swing.JLabel();
         jFTFNumero = new javax.swing.JFormattedTextField();
         jTFAlmoco = new javax.swing.JTextField();
@@ -418,6 +558,10 @@ public class Programacao extends javax.swing.JFrame {
         jBAddRespOutro = new javax.swing.JButton();
         jBOlho = new javax.swing.JButton();
         jCBRetornaMesmoDia = new javax.swing.JCheckBox();
+        jCBCarroExtra = new javax.swing.JComboBox<>();
+        jLbAlertaLaranja = new javax.swing.JLabel();
+        jLbVermelho = new javax.swing.JLabel();
+        jLbAlert = new javax.swing.JLabel();
         jLFundo = new javax.swing.JLabel();
         jMenuBar = new javax.swing.JMenuBar();
         jMCadastros = new javax.swing.JMenu();
@@ -428,6 +572,8 @@ public class Programacao extends javax.swing.JFrame {
         jMProgramacoes = new javax.swing.JMenu();
         jMIListaProgramacoes = new javax.swing.JMenuItem();
         jMIFolgasInternos = new javax.swing.JMenuItem();
+        Manutencao = new javax.swing.JMenu();
+        jMenuItemManutencao = new javax.swing.JMenuItem();
         jMSobre = new javax.swing.JMenu();
         jMIVerDetalhes = new javax.swing.JMenuItem();
 
@@ -441,18 +587,18 @@ public class Programacao extends javax.swing.JFrame {
         getContentPane().add(jLProg);
         jLProg.setBounds(440, 10, 350, 25);
 
-        jCB.setBackground(new java.awt.Color(7, 30, 74));
-        jCB.setToolTipText("");
-        jCB.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        jCB.setFocusable(false);
-        jCB.setName(""); // NOI18N
-        jCB.setLayout(null);
+        jPFundo.setBackground(new java.awt.Color(7, 30, 74));
+        jPFundo.setToolTipText("");
+        jPFundo.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        jPFundo.setFocusable(false);
+        jPFundo.setName(""); // NOI18N
+        jPFundo.setLayout(null);
 
         jLNumero.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLNumero.setForeground(new java.awt.Color(255, 255, 255));
         jLNumero.setText("Número do Projeto:");
         jLNumero.setToolTipText("");
-        jCB.add(jLNumero);
+        jPFundo.add(jLNumero);
         jLNumero.setBounds(730, 20, 110, 14);
 
         jFTFNumero.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.NumberFormatter(new java.text.DecimalFormat("####.##"))));
@@ -463,33 +609,33 @@ public class Programacao extends javax.swing.JFrame {
                 jFTFNumeroFocusGained(evt);
             }
         });
-        jCB.add(jFTFNumero);
+        jPFundo.add(jFTFNumero);
         jFTFNumero.setBounds(730, 40, 170, 30);
 
         jTFAlmoco.setToolTipText("Se houver, informe o local de almoço!");
         jTFAlmoco.setNextFocusableComponent(jTFJanta);
-        jCB.add(jTFAlmoco);
+        jPFundo.add(jTFAlmoco);
         jTFAlmoco.setBounds(500, 300, 500, 30);
 
         jLAlmoco.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLAlmoco.setForeground(new java.awt.Color(255, 255, 255));
         jLAlmoco.setText("Local de almoço:");
         jLAlmoco.setToolTipText("");
-        jCB.add(jLAlmoco);
+        jPFundo.add(jLAlmoco);
         jLAlmoco.setBounds(410, 310, 80, 16);
 
         jLHospedagem.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLHospedagem.setForeground(new java.awt.Color(255, 255, 255));
         jLHospedagem.setText("Hospedagem: ");
         jLHospedagem.setToolTipText("");
-        jCB.add(jLHospedagem);
+        jPFundo.add(jLHospedagem);
         jLHospedagem.setBounds(410, 270, 90, 16);
 
         jLCliente.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLCliente.setForeground(new java.awt.Color(255, 255, 255));
         jLCliente.setText("Cliente:");
         jLCliente.setToolTipText("");
-        jCB.add(jLCliente);
+        jPFundo.add(jLCliente);
         jLCliente.setBounds(610, 100, 110, 14);
 
         jCBHospedagem.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "N/A" }));
@@ -501,35 +647,35 @@ public class Programacao extends javax.swing.JFrame {
                 jCBHospedagemActionPerformed(evt);
             }
         });
-        jCB.add(jCBHospedagem);
+        jPFundo.add(jCBHospedagem);
         jCBHospedagem.setBounds(500, 260, 500, 30);
 
         jLColaboradores.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLColaboradores.setForeground(new java.awt.Color(255, 255, 255));
         jLColaboradores.setText("Nome do Colaborador:");
         jLColaboradores.setToolTipText("");
-        jCB.add(jLColaboradores);
+        jPFundo.add(jLColaboradores);
         jLColaboradores.setBounds(160, 90, 130, 14);
 
         jLColab.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jLColab.setToolTipText("");
         jSPColaboradores.setViewportView(jLColab);
 
-        jCB.add(jSPColaboradores);
+        jPFundo.add(jSPColaboradores);
         jSPColaboradores.setBounds(160, 110, 180, 310);
 
         jLSelecionados.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLSelecionados.setForeground(new java.awt.Color(255, 255, 255));
         jLSelecionados.setText("Colaboradores Escolhidos:");
         jLSelecionados.setToolTipText("");
-        jCB.add(jLSelecionados);
+        jPFundo.add(jLSelecionados);
         jLSelecionados.setBounds(410, 90, 160, 14);
 
         jLSelec.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jLSelec.setToolTipText("");
         jSPSelecionados.setViewportView(jLSelec);
 
-        jCB.add(jSPSelecionados);
+        jPFundo.add(jSPSelecionados);
         jSPSelecionados.setBounds(410, 110, 170, 120);
 
         jBSub.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
@@ -546,7 +692,7 @@ public class Programacao extends javax.swing.JFrame {
                 jBSubActionPerformed(evt);
             }
         });
-        jCB.add(jBSub);
+        jPFundo.add(jBSub);
         jBSub.setBounds(350, 180, 50, 30);
 
         jBAdd.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
@@ -562,27 +708,32 @@ public class Programacao extends javax.swing.JFrame {
                 jBAddActionPerformed(evt);
             }
         });
-        jCB.add(jBAdd);
+        jPFundo.add(jBAdd);
         jBAdd.setBounds(350, 130, 50, 30);
 
         jLResponsavel.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLResponsavel.setForeground(new java.awt.Color(255, 255, 255));
         jLResponsavel.setText("Selecione o Responsável da Obra:");
         jLResponsavel.setToolTipText("");
-        jCB.add(jLResponsavel);
-        jLResponsavel.setBounds(610, 170, 160, 14);
+        jPFundo.add(jLResponsavel);
+        jLResponsavel.setBounds(610, 180, 160, 14);
 
         jLCarro.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLCarro.setForeground(new java.awt.Color(255, 255, 255));
         jLCarro.setText("Selecione o Carro:");
         jLCarro.setToolTipText("");
-        jCB.add(jLCarro);
+        jPFundo.add(jLCarro);
         jLCarro.setBounds(820, 100, 160, 14);
 
         jCBCarro.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "N/A" }));
         jCBCarro.setToolTipText("Selecione o carro, caso precise");
         jCBCarro.setNextFocusableComponent(jCBCarretao);
-        jCB.add(jCBCarro);
+        jCBCarro.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jCBCarroMouseClicked(evt);
+            }
+        });
+        jPFundo.add(jCBCarro);
         jCBCarro.setBounds(820, 120, 180, 30);
 
         jBAddBloco.setBackground(new java.awt.Color(204, 204, 204));
@@ -593,7 +744,7 @@ public class Programacao extends javax.swing.JFrame {
                 jBAddBlocoActionPerformed(evt);
             }
         });
-        jCB.add(jBAddBloco);
+        jPFundo.add(jBAddBloco);
         jBAddBloco.setBounds(240, 540, 110, 30);
 
         jBAlterarBloco.setBackground(new java.awt.Color(204, 204, 204));
@@ -604,7 +755,7 @@ public class Programacao extends javax.swing.JFrame {
                 jBAlterarBlocoActionPerformed(evt);
             }
         });
-        jCB.add(jBAlterarBloco);
+        jPFundo.add(jBAlterarBloco);
         jBAlterarBloco.setBounds(370, 540, 110, 30);
 
         jBRemover.setBackground(new java.awt.Color(204, 204, 204));
@@ -615,7 +766,7 @@ public class Programacao extends javax.swing.JFrame {
                 jBRemoverActionPerformed(evt);
             }
         });
-        jCB.add(jBRemover);
+        jPFundo.add(jBRemover);
         jBRemover.setBounds(500, 540, 110, 30);
 
         jBLimpar.setBackground(new java.awt.Color(204, 204, 204));
@@ -626,28 +777,28 @@ public class Programacao extends javax.swing.JFrame {
                 jBLimparActionPerformed(evt);
             }
         });
-        jCB.add(jBLimpar);
+        jPFundo.add(jBLimpar);
         jBLimpar.setBounds(630, 540, 130, 30);
 
         jLDataSaida.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLDataSaida.setForeground(new java.awt.Color(255, 255, 255));
         jLDataSaida.setText("Data de Saída:");
         jLDataSaida.setToolTipText("");
-        jCB.add(jLDataSaida);
+        jPFundo.add(jLDataSaida);
         jLDataSaida.setBounds(250, 450, 90, 16);
 
         jLDataRetorno.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLDataRetorno.setForeground(new java.awt.Color(255, 255, 255));
         jLDataRetorno.setText("Data de Retorno: ");
         jLDataRetorno.setToolTipText("");
-        jCB.add(jLDataRetorno);
+        jPFundo.add(jLDataRetorno);
         jLDataRetorno.setBounds(250, 490, 110, 16);
 
         jLHoraSaida.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLHoraSaida.setForeground(new java.awt.Color(255, 255, 255));
         jLHoraSaida.setText("Hora de Saída:");
         jLHoraSaida.setToolTipText("");
-        jCB.add(jLHoraSaida);
+        jPFundo.add(jLHoraSaida);
         jLHoraSaida.setBounds(490, 450, 90, 16);
 
         jFTFHoraSaida.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.DateFormatter(java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT))));
@@ -675,7 +826,7 @@ public class Programacao extends javax.swing.JFrame {
                 jFTFHoraSaidaActionPerformed(evt);
             }
         });
-        jCB.add(jFTFHoraSaida);
+        jPFundo.add(jFTFHoraSaida);
         jFTFHoraSaida.setBounds(570, 440, 50, 30);
 
         jPanel1.setBackground(new java.awt.Color(0, 22, 90));
@@ -831,40 +982,40 @@ public class Programacao extends javax.swing.JFrame {
         jPanel1.add(jFTFHoraFimManha);
         jFTFHoraFimManha.setBounds(230, 20, 50, 30);
 
-        jCB.add(jPanel1);
+        jPFundo.add(jPanel1);
         jPanel1.setBounds(660, 420, 290, 110);
 
         jLJanta.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLJanta.setForeground(new java.awt.Color(255, 255, 255));
         jLJanta.setText("Local de janta:");
         jLJanta.setToolTipText("");
-        jCB.add(jLJanta);
+        jPFundo.add(jLJanta);
         jLJanta.setBounds(410, 350, 80, 16);
 
         jTFJanta.setToolTipText("Se houver, informe o local de almoço!");
         jTFJanta.setNextFocusableComponent(jFTFHoraSaida);
-        jCB.add(jTFJanta);
+        jPFundo.add(jTFJanta);
         jTFJanta.setBounds(500, 340, 500, 30);
 
         jCBCliente.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "N/A" }));
         jCBCliente.setToolTipText("Selecione o cliente. Caso não encontre, crie um para cada Fábrica!");
         jCBCliente.setBorder(null);
         jCBCliente.setNextFocusableComponent(jCBResponsavel);
-        jCB.add(jCBCliente);
+        jPFundo.add(jCBCliente);
         jCBCliente.setBounds(610, 120, 180, 30);
 
         jDCDataRetorno.setToolTipText("Dia/Mês/Ano");
         jDCDataRetorno.setDate(new java.util.Date(new java.util.Date().getTime() + 86400000L));
         jDCDataRetorno.setDateFormatString("dd/MM/yyyy");
         jDCDataRetorno.setNextFocusableComponent(jFTFHoraSaida);
-        jCB.add(jDCDataRetorno);
+        jPFundo.add(jDCDataRetorno);
         jDCDataRetorno.setBounds(340, 480, 130, 30);
 
         jDCDataSaida.setToolTipText("Dia/Mês/Ano");
         jDCDataSaida.setDate(new java.util.Date(new java.util.Date().getTime() + 86400000L));
         jDCDataSaida.setDateFormatString("dd/MM/yyyy");
         jDCDataSaida.setNextFocusableComponent(jDCDataRetorno);
-        jCB.add(jDCDataSaida);
+        jPFundo.add(jDCDataSaida);
         jDCDataSaida.setBounds(340, 440, 130, 30);
 
         jDCDataProgramacao.setToolTipText("Dia/Mês/Ano");
@@ -876,46 +1027,41 @@ public class Programacao extends javax.swing.JFrame {
                 jDCDataProgramacaoPropertyChange(evt);
             }
         });
-        jCB.add(jDCDataProgramacao);
+        jPFundo.add(jDCDataProgramacao);
         jDCDataProgramacao.setBounds(160, 40, 180, 30);
 
         jLProgramDia.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLProgramDia.setForeground(new java.awt.Color(255, 255, 255));
         jLProgramDia.setText("Adicionar para a programação do dia:");
         jLProgramDia.setToolTipText("");
-        jCB.add(jLProgramDia);
+        jPFundo.add(jLProgramDia);
         jLProgramDia.setBounds(160, 20, 210, 14);
 
         jCBFinalidade.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE", "OCULTAR", "ADEQUAÇÃO NR-12", "ELÉTRICA", "MECÂNICA", "LEVANTAMENTO TÉCNICO", "SPDA", "PASSAGEM DE TRABALHO", "VISITA COMERCIAL" }));
         jCBFinalidade.setToolTipText("Selecione a finalidade do bloco");
         jCBFinalidade.setNextFocusableComponent(jFTFNumero);
-        jCBFinalidade.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCBFinalidadeActionPerformed(evt);
-            }
-        });
-        jCB.add(jCBFinalidade);
+        jPFundo.add(jCBFinalidade);
         jCBFinalidade.setBounds(410, 40, 250, 30);
 
         jLFinalidade.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLFinalidade.setForeground(new java.awt.Color(255, 255, 255));
         jLFinalidade.setText("Finalidade:");
         jLFinalidade.setToolTipText("");
-        jCB.add(jLFinalidade);
+        jPFundo.add(jLFinalidade);
         jLFinalidade.setBounds(410, 20, 110, 14);
 
         jCBCarretao.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "N/A", "CARRETÃO GRANDE", "CARRETÃO PEQUENO" }));
         jCBCarretao.setToolTipText("Selecione o carretão, caso precise");
         jCBCarretao.setNextFocusableComponent(jCBHospedagem);
-        jCB.add(jCBCarretao);
-        jCBCarretao.setBounds(820, 190, 180, 30);
+        jPFundo.add(jCBCarretao);
+        jCBCarretao.setBounds(820, 200, 180, 30);
 
         jLCarretao.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLCarretao.setForeground(new java.awt.Color(255, 255, 255));
         jLCarretao.setText("Selecione o Carretão:");
         jLCarretao.setToolTipText("");
-        jCB.add(jLCarretao);
-        jLCarretao.setBounds(820, 170, 160, 14);
+        jPFundo.add(jLCarretao);
+        jLCarretao.setBounds(820, 180, 160, 14);
 
         jBDemaisInfos.setBackground(new java.awt.Color(204, 204, 204));
         jBDemaisInfos.setText("Adicionar Folgas e Internos");
@@ -926,7 +1072,7 @@ public class Programacao extends javax.swing.JFrame {
                 jBDemaisInfosActionPerformed(evt);
             }
         });
-        jCB.add(jBDemaisInfos);
+        jPFundo.add(jBDemaisInfos);
         jBDemaisInfos.setBounds(780, 540, 170, 30);
 
         jBBuscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/lupa.png"))); // NOI18N
@@ -951,19 +1097,19 @@ public class Programacao extends javax.swing.JFrame {
                 jBBuscarActionPerformed(evt);
             }
         });
-        jCB.add(jBBuscar);
+        jPFundo.add(jBBuscar);
         jBBuscar.setBounds(950, 20, 50, 50);
 
         jLObservacoes.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLObservacoes.setForeground(new java.awt.Color(255, 255, 255));
         jLObservacoes.setText("Observações:");
         jLObservacoes.setToolTipText("");
-        jCB.add(jLObservacoes);
+        jPFundo.add(jLObservacoes);
         jLObservacoes.setBounds(410, 390, 80, 16);
 
         jTFObservacoes.setToolTipText("Se houver, informe o local de almoço!");
         jTFObservacoes.setNextFocusableComponent(jFTFHoraSaida);
-        jCB.add(jTFObservacoes);
+        jPFundo.add(jTFObservacoes);
         jTFObservacoes.setBounds(500, 380, 500, 30);
 
         jCBResponsavel.setToolTipText("Selecione o Responsável dentre os que vão para Obra!");
@@ -973,8 +1119,8 @@ public class Programacao extends javax.swing.JFrame {
                 jCBResponsavelActionPerformed(evt);
             }
         });
-        jCB.add(jCBResponsavel);
-        jCBResponsavel.setBounds(610, 190, 180, 30);
+        jPFundo.add(jCBResponsavel);
+        jCBResponsavel.setBounds(610, 200, 180, 30);
 
         jTFRespOutro.setEditable(false);
         jTFRespOutro.setBackground(new java.awt.Color(204, 204, 204));
@@ -982,8 +1128,8 @@ public class Programacao extends javax.swing.JFrame {
         jTFRespOutro.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
         jTFRespOutro.setFocusable(false);
         jTFRespOutro.setRequestFocusEnabled(false);
-        jCB.add(jTFRespOutro);
-        jTFRespOutro.setBounds(650, 220, 140, 20);
+        jPFundo.add(jTFRespOutro);
+        jTFRespOutro.setBounds(650, 230, 140, 20);
 
         jBAddRespOutro.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jBAddRespOutro.setText(">>");
@@ -999,8 +1145,8 @@ public class Programacao extends javax.swing.JFrame {
                 jBAddRespOutroActionPerformed(evt);
             }
         });
-        jCB.add(jBAddRespOutro);
-        jBAddRespOutro.setBounds(610, 220, 30, 20);
+        jPFundo.add(jBAddRespOutro);
+        jBAddRespOutro.setBounds(610, 230, 30, 20);
 
         jBOlho.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jBOlho.setToolTipText("Ver todos colaboradores");
@@ -1015,24 +1161,51 @@ public class Programacao extends javax.swing.JFrame {
                 jBOlhoActionPerformed(evt);
             }
         });
-        jCB.add(jBOlho);
+        jPFundo.add(jBOlho);
         jBOlho.setBounds(350, 280, 50, 30);
 
         jCBRetornaMesmoDia.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         jCBRetornaMesmoDia.setForeground(new java.awt.Color(255, 255, 255));
         jCBRetornaMesmoDia.setSelected(true);
         jCBRetornaMesmoDia.setText(" Retornam no mesmo dia");
-        jCB.add(jCBRetornaMesmoDia);
+        jPFundo.add(jCBRetornaMesmoDia);
         jCBRetornaMesmoDia.setBounds(480, 480, 170, 30);
 
-        getContentPane().add(jCB);
-        jCB.setBounds(0, 40, 1200, 580);
+        jCBCarroExtra.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jCBCarroExtraMouseClicked(evt);
+            }
+        });
+        jPFundo.add(jCBCarroExtra);
+        jCBCarroExtra.setBounds(820, 150, 180, 30);
+
+        jLbAlertaLaranja.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/laranja.png"))); // NOI18N
+        jLbAlertaLaranja.setMaximumSize(new java.awt.Dimension(50, 50));
+        jLbAlertaLaranja.setMinimumSize(new java.awt.Dimension(50, 50));
+        jLbAlertaLaranja.setPreferredSize(new java.awt.Dimension(50, 50));
+        jLbAlertaLaranja.setRequestFocusEnabled(false);
+        jPFundo.add(jLbAlertaLaranja);
+        jLbAlertaLaranja.setBounds(1070, 40, 40, 50);
+
+        jLbVermelho.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/vermelho.png"))); // NOI18N
+        jPFundo.add(jLbVermelho);
+        jLbVermelho.setBounds(1070, 40, 40, 50);
+
+        jLbAlert.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLbAlert.setForeground(new java.awt.Color(255, 102, 0));
+        jLbAlert.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLbAlert.setText("  ");
+        jPFundo.add(jLbAlert);
+        jLbAlert.setBounds(1010, 90, 160, 16);
+
+        getContentPane().add(jPFundo);
+        jPFundo.setBounds(0, 40, 1180, 580);
 
         jLFundo.setBackground(new java.awt.Color(51, 51, 51));
         jLFundo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/tela_de_fundo.jpeg"))); // NOI18N
         jLFundo.setToolTipText("");
         getContentPane().add(jLFundo);
-        jLFundo.setBounds(-50, -200, 1360, 1120);
+        jLFundo.setBounds(0, -200, 1360, 1120);
 
         jMenuBar.setBackground(new java.awt.Color(153, 153, 153));
         jMenuBar.setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -1105,6 +1278,19 @@ public class Programacao extends javax.swing.JFrame {
 
         jMenuBar.add(jMProgramacoes);
 
+        Manutencao.setText("Manutenção");
+        Manutencao.setToolTipText("");
+
+        jMenuItemManutencao.setText("Tela de Manutenção");
+        jMenuItemManutencao.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemManutencaoActionPerformed(evt);
+            }
+        });
+        Manutencao.add(jMenuItemManutencao);
+
+        jMenuBar.add(Manutencao);
+
         jMSobre.setText("Sobre");
 
         jMIVerDetalhes.setText("Ver Detalhes");
@@ -1119,7 +1305,7 @@ public class Programacao extends javax.swing.JFrame {
 
         setJMenuBar(jMenuBar);
 
-        setSize(new java.awt.Dimension(1209, 725));
+        setSize(new java.awt.Dimension(1195, 773));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -1164,34 +1350,32 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jMIClienteActionPerformed
 
     private void atualizarRemove(){
-//        CadastroUsuario cadastroUser = new CadastroUsuario(usuarios);;
-//        if(!cadastroUser.getListaAtualizadaUsuarios().isEmpty()){
-//            ultimoIdUser = cadastroUser.getListaAtualizadaUsuarios().getLast().getId();
-//            String[] itensArray = cadastroUser.getListaAtualizadaUsuarios().stream().map(Usuario::getNomeDeGuerra).sorted().toArray(String[]::new);
-//            List<String> itensNaoUsados = new ArrayList<>();
-//            listModel.removeAllElements();
-//            for (String item : itensArray) {
-//                if(!IntStream.range(0, modeloSelec.getSize())
-//                    .mapToObj(modeloSelec::getElementAt)
-//                    .anyMatch(nome -> nome.equals(item))){
-//                        itensNaoUsados.add(item);
-//                }
-//            }
-//            
-//            
-//            for (String item : itensNaoUsados) {
-//                listModel.addElement(item);
-//            }
-//            jLColab.setModel(listModel);
-//        }
-        
         CadastroUsuario cadastroUser = new CadastroUsuario(usuarios);
         if (!cadastroUser.getListaAtualizadaUsuarios().isEmpty()) {
             ultimoIdUser = cadastroUser.getListaAtualizadaUsuarios().getLast().getId();
             List<String> itensNaoUsados = listaDisponivelDoDia(jDCDataProgramacao);
+            
+            List<String> equipeSelecionada = new ArrayList<>();
+                if (modeloSelec.getSize() > 0) {
+                    equipeSelecionada = new ArrayList<>(
+                            IntStream.range(0, modeloSelec.getSize())
+                                    .mapToObj(modeloSelec::getElementAt)
+                                    .collect(Collectors.toList())
+                    );
+                }
+            
             listModel.removeAllElements();
             for (String item : itensNaoUsados) {
-                listModel.addElement(item);
+                boolean jaSelecionado = false;
+                for (String selecionado : equipeSelecionada) {
+                    if(item.equals(selecionado)){
+                        jaSelecionado = true;
+                        break;
+                    }
+                }
+                if(!jaSelecionado){
+                    listModel.addElement(item);
+                }
             }
             jLColab.setModel(listModel);
         }
@@ -1299,7 +1483,8 @@ public class Programacao extends javax.swing.JFrame {
                             dados[16].trim(), //alm
                             dados[17].trim(), //jan
                             dados[18].trim().equals("null") ? null : new Hotel().getById(Integer.parseInt(dados[18].trim()), hoteis), //hotel
-                            (qtdArray >= 20 ? dados[19].trim() : null)
+                            (qtdArray >= 20 ? dados[19].trim() : null),
+                            (qtdArray >= 21 ? dados[20].trim() : null)
                     ));
                 }
             });
@@ -1393,7 +1578,8 @@ public class Programacao extends javax.swing.JFrame {
                             dados[16].trim(), //alm
                             dados[17].trim(), //jan
                             dados[18].trim().equals("null") ? null : new Hotel().getById(Integer.parseInt(dados[18].trim()), hoteis), //hotel
-                            (qtdArray >= 20 ? dados[19].trim() : null)
+                            (qtdArray >= 20 ? dados[19].trim() : null),
+                            (qtdArray >= 21 ? dados[20].trim() : null)
                     ));
                 }
             });
@@ -1453,8 +1639,30 @@ public class Programacao extends javax.swing.JFrame {
         }
         return false;
     }
+    
+    private boolean comparaMesmoDiaComProgramacao(JDateChooser dataIda, JDateChooser volta, JDateChooser dataProgramacao) {
+        boolean mesmaData = dataIda.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isEqual(volta.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        if (mesmaData && !dataIda.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isEqual(dataProgramacao.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())) {
+            JOptionPane.showMessageDialog(null, "A data de Saída e Retorno não batem com a data da Programação!", "Atenção", JOptionPane.WARNING_MESSAGE);
+            return true;
+        }
+        return false;
+    }
 
     private void jBAddBlocoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBAddBlocoActionPerformed
+        // Obtenha as datas inicial e final
+        Date dataInicial = jDCDataSaida.getDate();
+        Date dataFinal = jDCDataRetorno.getDate();
+
+        // Converta para LocalDate
+        java.time.LocalDate localDateSaida = dataInicial.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        java.time.LocalDate localDateRetorno = dataFinal.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        // Calcule a diferença em dias
+        long diferencaDias = ChronoUnit.DAYS.between(localDateSaida, localDateRetorno);
+
+        String[] options = {"Sim", "Não, cancelar!"};
+        
         listaDisponivelDoDia(jDCDataProgramacao);
         listaDeCarrosDisponivelDoDia(jDCDataProgramacao);
         
@@ -1468,14 +1676,38 @@ public class Programacao extends javax.swing.JFrame {
             texto.split("\\.").length > 1 && texto.split("\\.")[1].equals("0") ? 
             texto.split("\\.")[0] : 
             texto;
+        if(jFTFNumero.getText().equals(".0")){
+            JOptionPane.showMessageDialog(null, "Número de Projeto inválido!", "Atenção", JOptionPane.WARNING_MESSAGE);
+            jFTFNumero.setValue(null);
+            return;
+        }
+        
 
         if ((jDCDataProgramacao.getDate() != null && String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !String.valueOf(jCBCarro.getSelectedItem()).equals("N/A"))
             || (jDCDataProgramacao.getDate() != null && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !jFTFNumero.getText().equals(""))
-            || ("OCULTAR".equals(String.valueOf(jCBFinalidade.getSelectedItem())) && (projeto.equals("") || projeto.isEmpty()))) {
+            || (("OCULTAR".equals(String.valueOf(jCBFinalidade.getSelectedItem())) || "PASSAGEM DE TRABALHO".equals(String.valueOf(jCBFinalidade.getSelectedItem()))) && (projeto.equals("") || projeto.isEmpty()))) {
             
             if(!String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && jCBCliente.getSelectedItem().equals("N/A")){
                 JOptionPane.showMessageDialog(null, "Selecione um cliente válido ou mude a finalidade para VISITA COMERCIAL!", "Atenção", JOptionPane.WARNING_MESSAGE);
                 return;
+            }
+            
+            if(diferencaDias >= 15){
+                int escolha = JOptionPane.showOptionDialog(
+                    null, // Parent component (null para centralizar na tela)
+                    "O intervalo de datas é muito grande! \nTem certeza que quer criar programações do dia "+ new SimpleDateFormat("dd/MM/yyyy").format(jDCDataSaida.getDate())+ " até o dia " +new SimpleDateFormat("dd/MM/yyyy").format(jDCDataRetorno.getDate())+ "?", // Mensagem
+                    "Atenção!", // Título
+                    JOptionPane.DEFAULT_OPTION, // Tipo de opção
+                    JOptionPane.INFORMATION_MESSAGE, // Ícone
+                    null, // Nenhum ícone personalizado
+                    options, // Botões personalizados
+                    options[0] // Botão padrão selecionado
+                );
+
+
+                if(escolha != 0){
+                    return;
+                }
             }
             
             for (Bloco x : blocos) {
@@ -1484,10 +1716,6 @@ public class Programacao extends javax.swing.JFrame {
                     return;
                 }
             }
-
-            // Obtenha as datas inicial e final
-            Date dataInicial = jDCDataSaida.getDate();
-            Date dataFinal = jDCDataRetorno.getDate();
 
             // Crie um calendário para iterar sobre as datas
             Calendar calendario = Calendar.getInstance();
@@ -1566,6 +1794,9 @@ public class Programacao extends javax.swing.JFrame {
                 if (comparaDatasDeIdaEVolta(jDCDataSaida, jDCDataRetorno)) {
                     return;
                 }
+                if (comparaMesmoDiaComProgramacao(jDCDataSaida, jDCDataRetorno, jDCDataProgramacao)) {
+                    return;
+                }
                 String horaSaida = jFTFHoraSaida.getText();
                 if (dataProgramacao.equals("") || dataSaida.equals("") || dataRetorno.equals("") || horaSaida.equals("")) {
                     JOptionPane.showMessageDialog(null, "Preencha corretamente todas datas e hora de saída!", "Atenção", JOptionPane.WARNING_MESSAGE);
@@ -1581,19 +1812,20 @@ public class Programacao extends javax.swing.JFrame {
                     return;
                 }
 
+                String carroExtra = String.valueOf(jCBCarroExtra.getSelectedItem()) != null? String.valueOf(jCBCarroExtra.getSelectedItem()) : null;
                 String observacoes = jTFObservacoes.getText().equals("") ? null : jTFObservacoes.getText().trim().toUpperCase();
                 String nomesColabs = "", blocoSalvar = "";
                 Bloco bloco = null;
                 if(jCBRetornaMesmoDia.isSelected()){
-                    bloco = new Bloco(dataProgramacao, projeto, cliente, finalidade, equipe, responsavel, carro, carretao, dataProgramacao, dataProgramacao, horaSaida, horaManhaInicio, horaManhaFim, horaTardeInicio, horaTardeFim, almoco, janta, hotel, observacoes);
+                    bloco = new Bloco(dataProgramacao, projeto, cliente, finalidade, equipe, responsavel, carro, carretao, dataProgramacao, dataProgramacao, horaSaida, horaManhaInicio, horaManhaFim, horaTardeInicio, horaTardeFim, almoco, janta, hotel, observacoes, carroExtra);
                     blocos.add(bloco);
                     nomesColabs = bloco.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
-                    blocoSalvar = bloco.getId() + "|" + dataProgramacao + "|" + projeto + "|" + (cliente == null ? null : cliente.getId()) + "|" + finalidade + "|" + nomesColabs + "|" + (responsavel == null ? null : responsavel.getId()) + "|" + (carro == null ? null : carro.getId()) + "|" + carretao + "|" + dataProgramacao + "|" + dataProgramacao + "|" + horaSaida + "|" + horaManhaInicio + "|" + horaManhaFim + "|" + horaTardeInicio + "|" + horaTardeFim + "|" + almoco + "|" + janta + "|" + (hotel == null ? null : hotel.getId()) + "|" + observacoes;
+                    blocoSalvar = bloco.getId() + "|" + dataProgramacao + "|" + projeto + "|" + (cliente == null ? null : cliente.getId()) + "|" + finalidade + "|" + nomesColabs + "|" + (responsavel == null ? null : responsavel.getId()) + "|" + (carro == null ? null : carro.getId()) + "|" + carretao + "|" + dataProgramacao + "|" + dataProgramacao + "|" + horaSaida + "|" + horaManhaInicio + "|" + horaManhaFim + "|" + horaTardeInicio + "|" + horaTardeFim + "|" + almoco + "|" + janta + "|" + (hotel == null ? null : hotel.getId()) + "|" + observacoes + "|" + carroExtra;
                 }else{
-                    bloco = new Bloco(dataProgramacao, projeto, cliente, finalidade, equipe, responsavel, carro, carretao, dataSaida, dataRetorno, horaSaida, horaManhaInicio, horaManhaFim, horaTardeInicio, horaTardeFim, almoco, janta, hotel, observacoes);
+                    bloco = new Bloco(dataProgramacao, projeto, cliente, finalidade, equipe, responsavel, carro, carretao, dataSaida, dataRetorno, horaSaida, horaManhaInicio, horaManhaFim, horaTardeInicio, horaTardeFim, almoco, janta, hotel, observacoes, carroExtra);
                     blocos.add(bloco);
                     nomesColabs = bloco.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
-                    blocoSalvar = bloco.getId() + "|" + dataProgramacao + "|" + projeto + "|" + (cliente == null ? null : cliente.getId()) + "|" + finalidade + "|" + nomesColabs + "|" + (responsavel == null ? null : responsavel.getId()) + "|" + (carro == null ? null : carro.getId()) + "|" + carretao + "|" + dataSaida + "|" + dataRetorno + "|" + horaSaida + "|" + horaManhaInicio + "|" + horaManhaFim + "|" + horaTardeInicio + "|" + horaTardeFim + "|" + almoco + "|" + janta + "|" + (hotel == null ? null : hotel.getId()) + "|" + observacoes;
+                    blocoSalvar = bloco.getId() + "|" + dataProgramacao + "|" + projeto + "|" + (cliente == null ? null : cliente.getId()) + "|" + finalidade + "|" + nomesColabs + "|" + (responsavel == null ? null : responsavel.getId()) + "|" + (carro == null ? null : carro.getId()) + "|" + carretao + "|" + dataSaida + "|" + dataRetorno + "|" + horaSaida + "|" + horaManhaInicio + "|" + horaManhaFim + "|" + horaTardeInicio + "|" + horaTardeFim + "|" + almoco + "|" + janta + "|" + (hotel == null ? null : hotel.getId()) + "|" + observacoes + "|" + carroExtra;
                 }
 
                 
@@ -1611,19 +1843,179 @@ public class Programacao extends javax.swing.JFrame {
             limpaCampos();
             return;
         }
-        JOptionPane.showMessageDialog(null, "Não é possível adicionar, dados insuficiêntes!\nVISITA TÉCNICA precisa de DATA, Finalidade VISITA TÉCNICA e CARRO\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
+        JOptionPane.showMessageDialog(null, "Não é possível adicionar, dados insuficiêntes!\nVISITA COMERCIAL precisa de DATA, Finalidade VISITA COMERCIAL e CARRO\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
     }//GEN-LAST:event_jBAddBlocoActionPerformed
 
     private void jBAlterarBlocoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBAlterarBlocoActionPerformed
+        String[] options = {"Só Neste", "Em Todos", "Cancelar"};
+        
+        if(!jDCDataSaida.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isEqual(jDCDataRetorno.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())){
+            int escolha = JOptionPane.showOptionDialog(
+                null, // Parent component (null para centralizar na tela)
+                "Deseja que a alteração reflita em todos registros semelhantes ou somente neste?", // Mensagem
+                "Menu de Comandos", // Título
+                JOptionPane.DEFAULT_OPTION, // Tipo de opção
+                JOptionPane.INFORMATION_MESSAGE, // Ícone
+                null, // Nenhum ícone personalizado
+                options, // Botões personalizados
+                options[0] // Botão padrão selecionado
+            );
+    
+            switch (escolha) {
+                case 0 -> alteracaoPorData();
+                case 1 -> alteracaoEmTodasDatas(jDCDataSaida, jDCDataRetorno);
+                default -> {
+                    return;
+                }
+            }
+            return;
+        }
+        
+        
+        alteracaoPorData();
+    }//GEN-LAST:event_jBAlterarBlocoActionPerformed
+
+    private void alteracaoEmTodasDatas(JDateChooser dataSaidaProgram, JDateChooser dataRetornoProgram) {
         boolean exists = false;
         boolean isVisitaComercial = validaVisitaComercial();
         if (!isVisitaComercial && !validaOutros()) {
-            JOptionPane.showMessageDialog(null, "Dados insuficientes para Atualizar!\nSe for atualização de uma VISITA COMPERCIAL, preencha a DATA, a FINALIDADE 'VISITA COMERCIAL' e o CARRO.\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
+            JOptionPane.showMessageDialog(null, "Dados insuficientes para Atualizar!\nSe for atualização de uma VISITA COMERCIAL ou PASSAGEM DE TRABALHO, preencha a DATA, a FINALIDADE 'VISITA COMERCIAL' e o CARRO.\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
+            return;
+        }
+
+        String projeto = jFTFNumero.getText().equals("") ? null : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
+        LocalDate dataSaida = dataSaidaProgram.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate dataRetorno = dataRetornoProgram.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        for (LocalDate dataAtual = dataSaida; !dataAtual.isAfter(dataRetorno); dataAtual = dataAtual.plusDays(1)) {
+            String dataAtualStr = dataAtual.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+            for (Bloco x : blocos) {
+                if ((x.getDataProgramacao().contains(dataAtualStr) && (x.getFinalidade().equals("VISITA COMERCIAL") || x.getFinalidade().equals("PASSAGEM DE TRABALHO")) && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) ||
+                    (x.getDataProgramacao().contains(dataAtualStr) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto))) {
+
+                    exists = true;
+                    List<Usuario> equipe = new ArrayList<>();
+                    if (modeloSelec.getSize() > 0) {
+                        ArrayList<String> arrayList = new ArrayList<>(
+                                IntStream.range(0, modeloSelec.getSize())
+                                        .mapToObj(modeloSelec::getElementAt)
+                                        .collect(Collectors.toList())
+                        );
+                        equipe = (ArrayList<Usuario>) usuarios.stream()
+                                .filter(usuario -> arrayList.stream()
+                                .anyMatch(nome -> nome.equals(usuario.getNomeDeGuerra()))
+                                )
+                                .collect(Collectors.toList());
+                    }
+
+                    Cliente cliente = new Cliente().getByNameEmpresa(String.valueOf(jCBCliente.getSelectedItem()), clientes);
+                    x.setCliente(cliente);
+                    String finalidade = String.valueOf(jCBFinalidade.getSelectedItem());
+                    if (cliente == null && !finalidade.equals("VISITA COMERCIAL")) {
+                        JOptionPane.showMessageDialog(null, "Selecione um cliente! Caso seja Visita Comercial, mude a 'Finalidade'!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    Usuario responsavel = null;
+                    if (!equipe.isEmpty()) {
+                        x.setEquipe(equipe);
+                        String nomeResponsavel = String.valueOf(jCBResponsavel.getSelectedItem()).equals("OUTRO") ? jTFRespOutro.getText() : String.valueOf(jCBResponsavel.getSelectedItem());
+                        responsavel = new Usuario().getByNameDeGuerra(nomeResponsavel, usuarios);
+                        responsavel = finalidade.equals("VISITA COMERCIAL") ? null : responsavel;
+                        x.setResponsavelDoTrabalho(responsavel);
+
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Equipe não atualizada, a equipe tem que ser composta pelo menos por um integrante!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    Carro carro = new Carro().getByName(String.valueOf(jCBCarro.getSelectedItem()), carros);
+                    x.setCarro(carro);
+                    String carretao = String.valueOf(jCBCarretao.getSelectedItem());
+                    x.setCarretao(carretao);
+                    Hotel hotel = new Hotel().getByNameHotel(String.valueOf(jCBHospedagem.getSelectedItem()).split(",")[0], hoteis);
+                    x.setHospedagem(hotel);
+                    String almoco = jTFAlmoco.getText().equals("") ? null : jTFAlmoco.getText().trim().toUpperCase();
+                    x.setAlmoco(almoco);
+                    String janta = jTFJanta.getText().equals("") ? null : jTFJanta.getText().trim().toUpperCase();
+                    x.setJanta(janta);
+
+                    String dataSaidaStr = new SimpleDateFormat("dd/MM/yyyy").format(dataSaidaProgram.getDate());
+                    String dataRetornoStr = new SimpleDateFormat("dd/MM/yyyy").format(dataRetornoProgram.getDate());
+                    String horaSaida = jFTFHoraSaida.getText();
+                    if (dataSaidaStr.equals("") || dataRetornoStr.equals("") || horaSaida.equals("")) {
+                        JOptionPane.showMessageDialog(null, "Preencha corretamente todas datas e hora de saída!\nLembrando que a data do bloco não é alterada! Se precisar, delete o bloco e crie outro!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    x.setDataDeSaida(dataSaidaStr);
+                    x.setDataDeRetorno(dataRetornoStr);
+                    
+                    x.setHorarioDeSaida(horaSaida);
+
+                    String horaManhaInicio = jFTFHoraInicioManha.getText();
+                    String horaManhaFim = jFTFHoraFimManha.getText();
+                    String horaTardeInicio = jFTFHoraInicioTarde.getText();
+                    String horaTardeFim = jFTFHoraFimTarde.getText();
+                    if (horaManhaInicio.equals("") || horaManhaFim.equals("") || horaTardeInicio.equals("") || horaTardeFim.equals("")) {
+                        JOptionPane.showMessageDialog(null, "Informe o horário de trabalho corretamente!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    x.setHorarioDeTrabalhoInicio(horaManhaInicio);
+                    x.setHorarioDeTrabalhoFimMeioDia(horaManhaFim);
+                    x.setHorarioDeTrabalhoInicioMeioDia(horaTardeInicio);
+                    x.setHorarioDeTrabalhoFim(horaTardeFim);
+
+                    String observacoes = jTFObservacoes.getText().equals("") ? null : jTFObservacoes.getText().trim().toUpperCase();
+                    x.setObservacoes(observacoes);
+                }
+            }
+        }
+
+        if (exists) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter("blocos.txt"))) {
+                for (Bloco bloco : blocos) {
+                    String nomesColabsBl = bloco.getEquipe().stream()
+                        .map(usuario -> String.valueOf(usuario.getId()))
+                        .collect(Collectors.joining(","));
+
+                    String blocoSalvarBl = bloco.getId() + "|" + bloco.getDataProgramacao() + "|" 
+                        + bloco.getProjeto() + "|" 
+                        + (bloco.getCliente() == null ? null : bloco.getCliente().getId()) + "|" 
+                        + bloco.getFinalidade() + "|" + nomesColabsBl + "|" 
+                        + (bloco.getResponsavelDoTrabalho() == null ? null : bloco.getResponsavelDoTrabalho().getId()) + "|" 
+                        + (bloco.getCarro() == null ? null : bloco.getCarro().getId()) + "|" 
+                        + bloco.getCarretao() + "|" + bloco.getDataDeSaida() + "|" 
+                        + bloco.getDataDeRetorno() + "|" + bloco.getHorarioDeSaida() + "|" 
+                        + bloco.getHorarioDeTrabalhoInicio() + "|" + bloco.getHorarioDeTrabalhoFimMeioDia() + "|" 
+                        + bloco.getHorarioDeTrabalhoInicioMeioDia() + "|" + bloco.getHorarioDeTrabalhoFim() + "|" 
+                        + bloco.getAlmoco() + "|" + bloco.getJanta() + "|" 
+                        + (bloco.getHospedagem() == null || bloco.getHospedagem().equals("null") ? null : bloco.getHospedagem().getId()) + "|" 
+                        + bloco.getObservacoes() + "|"
+                        + bloco.getCarroExtra();
+
+                    writer.write(blocoSalvarBl);    // Escreve o bloco no arquivo
+                    writer.newLine();              // Adiciona uma nova linha
+                }
+
+                JOptionPane.showMessageDialog(null, "Bloco de programação gravado com sucesso!");
+                limpaCampos(); // Função para limpar os campos de entrada após a gravação
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(null, "Erro ao salvar o arquivo!", "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+    
+        }
+    }
+    
+    private void alteracaoPorData(){
+        boolean exists = false;
+        boolean isVisitaComercial = validaVisitaComercial();
+        if (!isVisitaComercial && !validaOutros()) {
+            JOptionPane.showMessageDialog(null, "Dados insuficientes para Atualizar!\nSe for atualização de uma VISITA COMPERCIAL ou PASSAGEM DE TRABALHO, preencha a DATA, a FINALIDADE 'VISITA COMERCIAL' e o CARRO.\nPara as demais finalidades, precisa informar a DATA, a FINALIDADE e o NÚMERO DO PROJETO!");
             return;
         }
         String projeto = jFTFNumero.getText().equals("") ? null : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
         for (Bloco x : blocos) {
-            if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)) {
+            if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && (x.getFinalidade().equals("VISITA COMERCIAL")||x.getFinalidade().equals("PASSAGEM DE TRABALHO")||x.getFinalidade().equals("OCULTAR")) && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)) {
                 exists = true;
                 List<Usuario> equipe = new ArrayList<>();
                 if (modeloSelec.getSize() > 0) {
@@ -1677,12 +2069,9 @@ public class Programacao extends javax.swing.JFrame {
                     JOptionPane.showMessageDialog(null, "Preencha corretamente todas datas e hora de saída!\nLembrando que a data do bloco não é alterada! Se precisar, delete o bloco e crie outro!", "Atenção", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
-                if (!comparaData(jDCDataSaida)) {
-                    x.setDataDeSaida(dataSaida);
-                }
-                if (!comparaData(jDCDataRetorno)) {
-                    x.setDataDeRetorno(dataRetorno);
-                }
+                x.setDataDeSaida(dataSaida);
+                x.setDataDeRetorno(dataRetorno);
+                
                 x.setHorarioDeSaida(horaSaida);
 
                 String horaManhaInicio = jFTFHoraInicioManha.getText();
@@ -1697,13 +2086,14 @@ public class Programacao extends javax.swing.JFrame {
                 x.setHorarioDeTrabalhoFimMeioDia(horaManhaFim);
                 x.setHorarioDeTrabalhoInicioMeioDia(horaTardeInicio);
                 x.setHorarioDeTrabalhoFim(horaTardeFim);
+                if(jCBCarroExtra.isVisible()){
+                    x.setCarroExtra(String.valueOf(jCBCarroExtra.getSelectedItem()));
+                }
+         
                 
                 String observacoes = jTFObservacoes.getText().equals("") ? null : jTFObservacoes.getText().trim().toUpperCase();
-                x.setObservacoes(jTFObservacoes.getText());
+                x.setObservacoes(observacoes);
                 
-                String nomesColabs = x.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
-                String blocoSalvar = x.getId() + "|" + x.getDataProgramacao() + "|" + projeto + "|" + (cliente == null ? null : cliente.getId()) + "|" + x.getFinalidade() + "|" + nomesColabs + "|" + (responsavel == null ? null : responsavel.getId()) + "|" + (carro == null ? null : carro.getId()) + "|" + carretao + "|" + dataSaida + "|" + dataRetorno + "|" + horaSaida + "|" + horaManhaInicio + "|" + horaManhaFim + "|" + horaTardeInicio + "|" + horaTardeFim + "|" + almoco + "|" + janta + "|" + (hotel == null ? null : hotel.getId() + "|" + observacoes);
-
                 try (BufferedWriter writer = new BufferedWriter(new FileWriter("blocos.txt"))) {
                     for (Bloco bloco : blocos) {
                         String nomesColabsBl = bloco.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
@@ -1719,7 +2109,8 @@ public class Programacao extends javax.swing.JFrame {
                             + bloco.getHorarioDeTrabalhoInicioMeioDia() + "|" + bloco.getHorarioDeTrabalhoFim() + "|" 
                             + bloco.getAlmoco() + "|" + bloco.getJanta() + "|" 
                             + (bloco.getHospedagem() == null || bloco.getHospedagem().equals("null") ? null : bloco.getHospedagem().getId()) + "|" 
-                            + bloco.getObservacoes();
+                            + bloco.getObservacoes() + "|"
+                            + bloco.getCarroExtra();
                         writer.write(blocoSalvarBl);    // Escreve a linha no arquivo
                         writer.newLine();       // Adiciona uma nova linha
                     }
@@ -1738,8 +2129,8 @@ public class Programacao extends javax.swing.JFrame {
             limpaCampos();
             return;
         }
-    }//GEN-LAST:event_jBAlterarBlocoActionPerformed
-
+    }
+    
     private void jBRemoverActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBRemoverActionPerformed
         boolean isVisitaComercial = validaVisitaComercial();
         boolean exists = false;
@@ -1786,7 +2177,8 @@ public class Programacao extends javax.swing.JFrame {
                     + bloco.getHorarioDeTrabalhoInicioMeioDia() + "|" + bloco.getHorarioDeTrabalhoFim() + "|"
                     + bloco.getAlmoco() + "|" + bloco.getJanta() + "|"
                     + (bloco.getHospedagem() == null || bloco.getHospedagem().equals("null") ? null : bloco.getHospedagem().getId()) + "|"
-                    + bloco.getObservacoes();
+                    + bloco.getObservacoes() + "|"
+                    + bloco.getCarroExtra();
 
                 writer.write(blocoSalvar);  // Escrever a linha no arquivo
                 writer.newLine();           // Adicionar uma nova linha após cada bloco
@@ -1831,6 +2223,8 @@ public class Programacao extends javax.swing.JFrame {
         jBAddRespOutro.setVisible(false);
         jTFRespOutro.setEnabled(false);
         jTFRespOutro.setVisible(false);
+        jCBCarroExtra.setEnabled(false);
+        jCBCarroExtra.setVisible(false);
         jTFRespOutro.setText("");
         jCBResponsavel.removeAll();
     }
@@ -1847,9 +2241,21 @@ public class Programacao extends javax.swing.JFrame {
         });
     }//GEN-LAST:event_jMIVerDetalhesActionPerformed
 
+    private void habilitaCarroExtra(){
+        jCBCarroExtra.setEnabled(true);
+        jCBCarroExtra.setVisible(true);
+        jCBCarroExtra.removeAllItems();
+        for (int i = 0; i < jCBCarro.getItemCount(); i++) {
+            jCBCarroExtra.addItem(jCBCarro.getItemAt(i));
+        }
+        if(!String.valueOf(jCBCarro.getSelectedItem()).equals("N/A")){
+            jCBCarroExtra.removeItem((String)jCBCarro.getSelectedItem());
+        }
+    }
+    
     private void jBAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBAddActionPerformed
         String nomeSelecionado = jLColab.getSelectedValue();
-
+        
         if (nomeSelecionado != null) {
             boolean isSaved = false;
             for (int i = 0; i < modeloSelec.size(); i++) {
@@ -1863,11 +2269,11 @@ public class Programacao extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(null, "O Colaborador já está selecionado!");
                 return;
             }
-            if (modeloSelec.size() >= 5) {
-                JOptionPane.showMessageDialog(null, "Não tem mais espaço no carro!");
+            if (modeloSelec.size() > 10) {
+                JOptionPane.showMessageDialog(null, "Atingiu o limite de colaboradores na obra!");
                 return;
             }
-            if (!isSaved && modeloSelec.size() < 5) {
+            if (!isSaved && modeloSelec.size() <= 10) {
                 modeloSelec.addElement(nomeSelecionado);
                 jCBResponsavel.addItem(nomeSelecionado);
                 jLSelec.setModel(modeloSelec);
@@ -1877,8 +2283,18 @@ public class Programacao extends javax.swing.JFrame {
             if (modeloSelec.size() == 5) {
                 checagemCarteira();
             }
+            
         } else {
             JOptionPane.showMessageDialog(null, "Nenhum colaborador selecionado na listagem!");
+        }
+        
+        if (modeloSelec.size() >= 6 && !String.valueOf(jCBCarro.getSelectedItem()).equals("S10 PRATA ASN-8E19")) {
+            habilitaCarroExtra();
+        } else if (modeloSelec.size() >= 7 && String.valueOf(jCBCarro.getSelectedItem()).equals("S10 PRATA ASN-8E19")){
+            habilitaCarroExtra();
+        } else {
+            jCBCarroExtra.setEnabled(false);
+            jCBCarroExtra.setVisible(false);
         }
     }//GEN-LAST:event_jBAddActionPerformed
 
@@ -1905,7 +2321,6 @@ public class Programacao extends javax.swing.JFrame {
 
     private void jBSubActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBSubActionPerformed
         String itemSelecionado = jLSelec.getSelectedValue();
-
         if (itemSelecionado != null) {
             jCBResponsavel.removeItem(itemSelecionado);
             listModel.addElement(jLSelec.getSelectedValue());
@@ -1913,6 +2328,15 @@ public class Programacao extends javax.swing.JFrame {
             atualizarRemove();
         } else {
             JOptionPane.showMessageDialog(null, "Nenhum colaborador selecionado na listagem!");
+        }
+        
+        if (modeloSelec.size() >= 6 && !String.valueOf(jCBCarro.getSelectedItem()).equals("S10 PRATA ASN-8E19")) {
+            habilitaCarroExtra();
+        } else if (modeloSelec.size() >= 7 && String.valueOf(jCBCarro.getSelectedItem()).equals("S10 PRATA ASN-8E19")){
+            habilitaCarroExtra();
+        } else {
+            jCBCarroExtra.setEnabled(false);
+            jCBCarroExtra.setVisible(false);
         }
     }//GEN-LAST:event_jBSubActionPerformed
 
@@ -2051,10 +2475,6 @@ public class Programacao extends javax.swing.JFrame {
         });
     }//GEN-LAST:event_jMIFolgasInternosActionPerformed
 
-    private void jCBFinalidadeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCBFinalidadeActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jCBFinalidadeActionPerformed
-
     private void jBBuscarMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jBBuscarMouseClicked
 
     }//GEN-LAST:event_jBBuscarMouseClicked
@@ -2064,11 +2484,11 @@ public class Programacao extends javax.swing.JFrame {
     }
     
     private boolean validaVisitaComercial() {
-        return String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE") && !String.valueOf(jCBCarro.getSelectedItem()).equals("N/A");
+        return (String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") || String.valueOf(jCBFinalidade.getSelectedItem()).equals("PASSAGEM DE TRABALHO")) && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE") && !String.valueOf(jCBCarro.getSelectedItem()).equals("N/A");
     }
 
     private boolean validaOutros() {
-        return !String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE") && !jFTFNumero.getText().equals("") && !jFTFNumero.getText().equals(".0");
+        return (!String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE") && !jFTFNumero.getText().equals("") && !jFTFNumero.getText().equals(".0"))|| ((String.valueOf(jCBFinalidade.getSelectedItem()).equals("PASSAGEM DE TRABALHO") || String.valueOf(jCBFinalidade.getSelectedItem()).equals("OCULTAR")) && !jFTFNumero.getText().equals(".0"));
     }
 
     private void jBBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBBuscarActionPerformed
@@ -2089,9 +2509,9 @@ public class Programacao extends javax.swing.JFrame {
                     return;
                 }
             }
-        } else if (!isVisitaComercial && String.valueOf(jCBFinalidade.getSelectedItem()).equals("OCULTAR") && !String.valueOf(jCBCliente.getSelectedItem()).equals("SELECIONE")) {
+        } else if (!isVisitaComercial && (String.valueOf(jCBFinalidade.getSelectedItem()).equals("OCULTAR") || String.valueOf(jCBFinalidade.getSelectedItem()).equals("PASSAGEM DE TRABALHO")) && !String.valueOf(jCBCliente.getSelectedItem()).equals("SELECIONE")) {
             for (Bloco x : blocos) {
-                if (x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals("OCULTAR") && x.getCliente().getNome().equals(String.valueOf(jCBCliente.getSelectedItem()))) {
+                if (x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && (x.getFinalidade().equals("OCULTAR")||x.getFinalidade().equals("PASSAGEM DE TRABALHO")) && x.getCliente().getNome().equals(String.valueOf(jCBCliente.getSelectedItem()))) {
                     recuperaDados(x);
                     return;
                 }
@@ -2101,7 +2521,6 @@ public class Programacao extends javax.swing.JFrame {
             return;
         }
         JOptionPane.showMessageDialog(null, "Nada encontrado! Verifique se o bloco já foi criado!");
-        limpaCampos();
         return;
     }//GEN-LAST:event_jBBuscarActionPerformed
 
@@ -2160,6 +2579,8 @@ public class Programacao extends javax.swing.JFrame {
             }
             dataSalva = dataFormatada;
             atualizarListas();
+            jDCDataSaida.setDate(jDCDataProgramacao.getDate());
+            jDCDataRetorno.setDate(jDCDataProgramacao.getDate());
         }
     }//GEN-LAST:event_jDCDataProgramacaoPropertyChange
 
@@ -2203,8 +2624,56 @@ public class Programacao extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jBOlhoActionPerformed
 
+    private void jCBCarroMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jCBCarroMouseClicked
+        if(modeloSelec.size() >= 6) {
+            habilitaCarroExtra();
+        }
+    }//GEN-LAST:event_jCBCarroMouseClicked
+
+    private void jCBCarroExtraMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jCBCarroExtraMouseClicked
+        if(modeloSelec.size() >= 6) {
+            habilitaCarroExtra();
+        }
+    }//GEN-LAST:event_jCBCarroExtraMouseClicked
+
+    private void jMenuItemManutencaoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemManutencaoActionPerformed
+        ManutencaoView manutencao = new ManutencaoView(carros);
+        manutencao.setVisible(true);
+        
+        manutencao.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                atualizarListas();
+            }
+        });
+    }//GEN-LAST:event_jMenuItemManutencaoActionPerformed
+
     private void recuperaDados(Bloco x) {
         try {
+            if(x.getCarroExtra()!=null && !x.getCarroExtra().equals("")){
+                jCBCarroExtra.setVisible(true);
+                jCBCarroExtra.setEnabled(true);
+                        
+                boolean encontrado = false;
+
+                for (int i = 0; i < jCBCarroExtra.getItemCount(); i++) {
+                    if (jCBCarroExtra.getItemAt(i).equals(x.getCarroExtra())) {
+                        encontrado = true;
+                        break;
+                    }
+                }
+
+                if (encontrado) {
+                    jCBCarroExtra.setSelectedItem(x.getCarroExtra());
+                } else {
+                    jCBCarroExtra.addItem(x.getCarroExtra());
+                    jCBCarroExtra.setSelectedItem(x.getCarroExtra());
+                }
+            }else{
+                jCBCarroExtra.setVisible(false);
+                jCBCarroExtra.setEnabled(false);
+            }
+            
             modeloSelec.removeAllElements();
             jCBResponsavel.removeAllItems();
             x.getEquipe().forEach(membro -> {
@@ -2320,6 +2789,7 @@ public class Programacao extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenu Manutencao;
     private javax.swing.JButton jBAdd;
     private javax.swing.JButton jBAddBloco;
     private javax.swing.JButton jBAddRespOutro;
@@ -2330,9 +2800,9 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JButton jBOlho;
     private javax.swing.JButton jBRemover;
     private javax.swing.JButton jBSub;
-    private javax.swing.JPanel jCB;
     private javax.swing.JComboBox<String> jCBCarretao;
     private javax.swing.JComboBox<String> jCBCarro;
+    private javax.swing.JComboBox<String> jCBCarroExtra;
     public javax.swing.JComboBox<String> jCBCliente;
     private javax.swing.JComboBox<String> jCBFinalidade;
     public javax.swing.JComboBox<String> jCBHospedagem;
@@ -2372,6 +2842,9 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JLabel jLResponsavel;
     private javax.swing.JList<String> jLSelec;
     private javax.swing.JLabel jLSelecionados;
+    private javax.swing.JLabel jLbAlert;
+    private javax.swing.JLabel jLbAlertaLaranja;
+    private javax.swing.JLabel jLbVermelho;
     private javax.swing.JMenu jMCadastros;
     private javax.swing.JMenuItem jMICarros;
     private javax.swing.JMenuItem jMICliente;
@@ -2383,6 +2856,8 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JMenu jMProgramacoes;
     private javax.swing.JMenu jMSobre;
     private javax.swing.JMenuBar jMenuBar;
+    private javax.swing.JMenuItem jMenuItemManutencao;
+    private javax.swing.JPanel jPFundo;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jSPColaboradores;
     private javax.swing.JScrollPane jSPSelecionados;

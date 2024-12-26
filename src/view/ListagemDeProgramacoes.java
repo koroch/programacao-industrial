@@ -18,11 +18,14 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -53,15 +56,20 @@ import programacao.model.Usuario;
 public class ListagemDeProgramacoes extends javax.swing.JFrame {
     private List<Bloco> blocos = new ArrayList<>();
     private List<DemaisInfos> demaisInfos = new ArrayList<>();
+    private Date firstClickDate = null;
+    private Date secondClickDate = null;
     
     public ListagemDeProgramacoes(List<DemaisInfos> demaisInfos, int ultimoIdDemaisInfos, List<Bloco> blocos, int ultimoIdBlocos) {
         initComponents();
+        jLbCalendar.setVisible(false);
+        jLbCalendar.setEnabled(false);
+        jPCalendar.setVisible(false);
+        jPCalendar.setEnabled(false);
         this.blocos = blocos;
         this.demaisInfos = demaisInfos;
         preencheCB(blocos, demaisInfos);
         configurarModeloTabela();
     }
-    @SuppressWarnings("unchecked")
     
     private void configurarModeloTabela() {
         DefaultTableModel model = (DefaultTableModel) jTProgramação.getModel();
@@ -83,7 +91,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                 }
                 
                 // Verifica se a célula contém o texto específico para aplicar negrito
-                if (value != null && value.toString().startsWith("OBS:") || value != null && value.toString().startsWith("CLIENTE:") || (value != null && value.toString().startsWith("VISITA COMERCIAL")) || (value != null && value.toString().startsWith("MECÂNICOS INTERNOS:")) || (value != null && value.toString().startsWith("ELETRICISTAS INTERNOS:")) || (value != null && value.toString().startsWith("FOLGAS:")) || (value != null && value.toString().startsWith("FÉRIAS:"))) {
+                if (value != null && value.toString().startsWith("PROGRAMAÇÃO DO DIA") || value != null && value.toString().startsWith("OBS:") || value != null && value.toString().startsWith("CLIENTE:") || (value != null && value.toString().startsWith("VISITA COMERCIAL")) || (value != null && value.toString().startsWith("MECÂNICOS INTERNOS:")) || (value != null && value.toString().startsWith("ELETRICISTAS INTERNOS:")) || (value != null && value.toString().startsWith("FOLGAS:")) || (value != null && value.toString().startsWith("FÉRIAS:"))) {
                         c.setFont(c.getFont().deriveFont(java.awt.Font.BOLD)); 
                 } else {
                     c.setFont(c.getFont().deriveFont(java.awt.Font.PLAIN)); 
@@ -99,7 +107,6 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
             }
         });
     }
-    
     private void preencheCB(List<Bloco> blocos, List<DemaisInfos> demaisInfos){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     
@@ -146,6 +153,11 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
     private void initComponents() {
 
         jLProg = new javax.swing.JLabel();
+        jLbCalendar = new javax.swing.JLabel();
+        jPCalendar = new javax.swing.JPanel();
+        jCalendar1 = new com.toedter.calendar.JCalendar();
+        jBtEnviarRange = new javax.swing.JButton();
+        jBtReset = new javax.swing.JButton();
         jCB = new javax.swing.JPanel();
         jLProgramDia = new javax.swing.JLabel();
         jCBDatasUnicas = new javax.swing.JComboBox<>();
@@ -157,6 +169,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jBCopiar = new javax.swing.JButton();
         jBBuscar = new javax.swing.JButton();
         jTFBuscar = new javax.swing.JTextField();
+        jCBxIntervalo = new javax.swing.JCheckBox();
         jLFundo = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -168,6 +181,45 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jLProg.setText("Visualizar Programações");
         getContentPane().add(jLProg);
         jLProg.setBounds(500, 10, 350, 25);
+
+        jLbCalendar.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLbCalendar.setForeground(new java.awt.Color(255, 255, 255));
+        jLbCalendar.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLbCalendar.setToolTipText("");
+        getContentPane().add(jLbCalendar);
+        jLbCalendar.setBounds(410, 390, 380, 60);
+
+        jPCalendar.setBackground(new java.awt.Color(0, 51, 102));
+        jPCalendar.setLayout(null);
+
+        jCalendar1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                jCalendar1PropertyChange(evt);
+            }
+        });
+        jPCalendar.add(jCalendar1);
+        jCalendar1.setBounds(10, 10, 360, 230);
+
+        jBtEnviarRange.setText("CONFIRMAR INTERVALO");
+        jBtEnviarRange.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBtEnviarRangeActionPerformed(evt);
+            }
+        });
+        jPCalendar.add(jBtEnviarRange);
+        jBtEnviarRange.setBounds(10, 270, 240, 40);
+
+        jBtReset.setText("RESET");
+        jBtReset.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBtResetActionPerformed(evt);
+            }
+        });
+        jPCalendar.add(jBtReset);
+        jBtReset.setBounds(260, 270, 110, 40);
+
+        getContentPane().add(jPCalendar);
+        jPCalendar.setBounds(410, 160, 380, 320);
 
         jCB.setBackground(new java.awt.Color(7, 30, 74));
         jCB.setToolTipText("");
@@ -242,7 +294,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jScrollPane1.setViewportView(jTProgramação);
 
         jCB.add(jScrollPane1);
-        jScrollPane1.setBounds(160, 70, 880, 490);
+        jScrollPane1.setBounds(170, 90, 880, 470);
 
         jBPDF.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/pdf.png"))); // NOI18N
         jBPDF.setMaximumSize(new java.awt.Dimension(52, 52));
@@ -277,6 +329,11 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jTFDiaSemana.setFocusable(false);
         jTFDiaSemana.setRequestFocusEnabled(false);
         jTFDiaSemana.setVerifyInputWhenFocusTarget(false);
+        jTFDiaSemana.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTFDiaSemanaActionPerformed(evt);
+            }
+        });
         jCB.add(jTFDiaSemana);
         jTFDiaSemana.setBounds(510, 30, 170, 30);
 
@@ -323,8 +380,18 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jCB.add(jTFBuscar);
         jTFBuscar.setBounds(710, 30, 270, 30);
 
+        jCBxIntervalo.setForeground(new java.awt.Color(255, 255, 255));
+        jCBxIntervalo.setText(" Intervalo de datas");
+        jCBxIntervalo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCBxIntervaloActionPerformed(evt);
+            }
+        });
+        jCB.add(jCBxIntervalo);
+        jCBxIntervalo.setBounds(190, 60, 140, 20);
+
         getContentPane().add(jCB);
-        jCB.setBounds(0, 40, 1200, 630);
+        jCB.setBounds(0, 40, 1210, 640);
 
         jLFundo.setBackground(new java.awt.Color(51, 51, 51));
         jLFundo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/tela_de_fundo.jpeg"))); // NOI18N
@@ -337,18 +404,26 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jCBDatasUnicasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCBDatasUnicasActionPerformed
-        String dataEscolhida = String.valueOf(jCBDatasUnicas.getSelectedItem());
-        String data = dataEscolhida;
-        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate dataDate = LocalDate.parse(data, formato);
-        jTFDiaSemana.setText(dataDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.getDefault()).toUpperCase());
-        populateTable(dataEscolhida);
+        if(jCBDatasUnicas.getComponentCount() > 0){
+            String dataEscolhida = String.valueOf(jCBDatasUnicas.getSelectedItem());
+            String data = dataEscolhida;
+            DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate dataDate = LocalDate.parse(data, formato);
+            jTFDiaSemana.setText(dataDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.getDefault()).toUpperCase());
+            DefaultTableModel model = (DefaultTableModel) jTProgramação.getModel();
+            model.setRowCount(0); 
+            populateTable(dataEscolhida, model);
+        }
     }//GEN-LAST:event_jCBDatasUnicasActionPerformed
 
     private void jBPDFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBPDFActionPerformed
         try {
             Document documento = new Document();
-            PdfWriter.getInstance(documento, new FileOutputStream("files/Programação-"+jCBDatasUnicas.getSelectedItem().toString().replaceAll("/", ".")+".pdf"));
+            if(!jCBxIntervalo.isSelected()){
+                PdfWriter.getInstance(documento, new FileOutputStream("files/Programação-"+jCBDatasUnicas.getSelectedItem().toString().replaceAll("/", ".")+".pdf"));
+            }else{
+                PdfWriter.getInstance(documento, new FileOutputStream("files/Programação-multi-datas.pdf"));
+            }
             documento.open();
 
             PdfPTable tabela = new PdfPTable(jTProgramação.getColumnCount());
@@ -356,21 +431,25 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
             tabela.getDefaultCell().setBorderWidth(0);
 
             // Adicionar cabeçalho da tabela
-            PdfPCell celula1 = new PdfPCell(new Phrase("PROGRAMAÇÃO DO DIA " + jCBDatasUnicas.getSelectedItem().toString() + " - " +jTFDiaSemana.getText()));
-            celula1.setBorderWidth(0);
-            tabela.addCell(celula1);
-            PdfPCell celula2 = new PdfPCell(new Phrase(" "));
-            celula2.setBorderWidth(0);
-            tabela.addCell(celula2);
+            //PdfPCell celula1 = new PdfPCell(new Phrase("PROGRAMAÇÃO DO DIA " + jCBDatasUnicas.getSelectedItem().toString() + " - " +jTFDiaSemana.getText()));
+//            celula1.setBorderWidth(0);
+//            tabela.addCell(celula1);
+//            PdfPCell celula2 = new PdfPCell(new Phrase(" "));
+//            celula2.setBorderWidth(0);
+//            tabela.addCell(celula2);
             
             // Adicionar linhas da tabela
             for (int i = 0; i < jTProgramação.getRowCount(); i++) {
                 PdfPCell celula = new PdfPCell(new Phrase(String.valueOf(jTProgramação.getValueAt(i, 0))));
                 celula.setBorderWidth(0);
                 String valor = String.valueOf(jTProgramação.getValueAt(i, 0)).equals("")?" ":String.valueOf(jTProgramação.getValueAt(i, 0));
-                if (valor.startsWith("CLIENTE:") || valor.startsWith("OBS:") || valor.startsWith("VISITA COMERCIAL")) {
+                if (valor.startsWith("MECÂNICOS INTERNOS:") || valor.startsWith("ELETRICISTAS INTERNOS:") || valor.startsWith("FOLGAS:") || valor.startsWith("FÉRIAS:") || valor.startsWith("PROGRAMAÇÃO DO DIA") || valor.startsWith("CLIENTE:") || valor.startsWith("OBS:") || valor.startsWith("VISITA COMERCIAL")) {
                     Font fonteNegrito = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD);
-                    celula.setPhrase(new Phrase(valor, fonteNegrito));
+                    if(valor.startsWith("PROGRAMAÇÃO DO DIA")) {
+                        celula.setPhrase(new Phrase("\n\n"+valor, fonteNegrito));
+                    }else{
+                         celula.setPhrase(new Phrase(valor, fonteNegrito));
+                    }
                 } else {
                     celula.setPhrase(new Phrase(valor));
                 }
@@ -393,7 +472,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         // Adicionar cabeçalho da tabela
         Row row = sheet.createRow(0);
         Cell cell0 = row.createCell(0);
-        cell0.setCellValue("PROGRAMAÇÃO DO DIA " + jCBDatasUnicas.getSelectedItem().toString() + " - " +jTFDiaSemana.getText());
+        //cell0.setCellValue("PROGRAMAÇÃO DO DIA " + jCBDatasUnicas.getSelectedItem().toString() + " - " +jTFDiaSemana.getText());
         
         // Adicionar linhas da tabela
         for (int i = 1; i <= jTProgramação.getRowCount(); i++) {
@@ -418,20 +497,26 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
 
     private void jBCopiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBCopiarActionPerformed
         StringBuilder texto = new StringBuilder();
-        texto.append(("*PROGRAMAÇÃO DO DIA " + jCBDatasUnicas.getSelectedItem().toString() + " - " +jTFDiaSemana.getText()+"*\n\n")); 
-        
+        //texto.append(("*PROGRAMAÇÃO DO DIA " + jCBDatasUnicas.getSelectedItem().toString() + " - " +jTFDiaSemana.getText()+"*\n\n")); 
+        texto.append("\n"); 
         for (int i = 0; i < jTProgramação.getRowCount(); i++) {
             Object valor = jTProgramação.getValueAt(i, 0);
             if (valor != null) {
-                if(valor.toString().contains("CLIENTE:") ||  valor.toString().startsWith("MECÂNICOS INTERNOS:") || valor.toString().startsWith("ELETRICISTAS INTERNOS:") || valor.toString().startsWith("FOLGAS:") || valor.toString().startsWith("FÉRIAS:")){
+                if(valor.toString().contains("PROGRAMAÇÃO DO DIA ") || valor.toString().contains("CLIENTE:") ||  valor.toString().startsWith("MECÂNICOS INTERNOS:") || valor.toString().startsWith("ELETRICISTAS INTERNOS:") || valor.toString().startsWith("FOLGAS:") || valor.toString().startsWith("FÉRIAS:")){
                     texto.append("*"+valor.toString().trim()+"*");
+                    if(valor.toString().contains("CLIENTE:")){
+                        texto.append("\n");
+                    }
                 }else{
                     texto.append(valor.toString());
                 }
             } else {
                 texto.append("");
             }
-            texto.append("\n"); 
+            texto.append("\n");
+            if(valor.equals("")){
+                texto.append("\n");
+            }
         }
 
         StringSelection selection = new StringSelection(texto.toString());
@@ -452,6 +537,121 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         buscarAcao();
     }//GEN-LAST:event_jTFBuscarActionPerformed
 
+    private void jCalendar1PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_jCalendar1PropertyChange
+        Date selectedDate = jCalendar1.getDate();
+
+        // Se for a primeira data a ser selecionada
+        if (firstClickDate == null) {
+            firstClickDate = selectedDate;
+            jLbCalendar.setText("Selecione a segunda data.");
+        } 
+        // Se for a segunda data a ser selecionada
+        else if (secondClickDate == null) {
+            secondClickDate = selectedDate;
+
+            // Verificar se as datas estão na ordem correta
+            if (firstClickDate.after(secondClickDate)) {
+                // Se a primeira data for maior que a segunda, invertê-las
+                Date temp = firstClickDate;
+                firstClickDate = secondClickDate;
+                secondClickDate = temp;
+            }
+
+            // Exibir o intervalo selecionado
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            jLbCalendar.setText("Intervalo: " + sdf.format(firstClickDate) + " até " + sdf.format(secondClickDate));
+
+            // Chamar o método para processar as datas
+            processInterval(firstClickDate, secondClickDate);
+
+            // Não chamar o reset aqui, para que as variáveis de data sejam preservadas
+            // resetDates();  // Remover a chamada para resetDates()
+        }
+    }//GEN-LAST:event_jCalendar1PropertyChange
+
+    private void processInterval(Date firstDate, Date secondDate) {
+        if (firstDate == null || secondDate == null) {
+            return;
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+    }
+
+    // Método para resetar as variáveis, permitindo uma nova seleção
+    private void resetDates() {
+        // Resetando as variáveis para permitir a seleção de novas datas
+        firstClickDate = null;
+        secondClickDate = null;
+        jLbCalendar.setText("Selecione a primeira data.");
+    }
+    
+    private void jCBxIntervaloActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCBxIntervaloActionPerformed
+        if(jCBxIntervalo.isSelected()){
+            jCBDatasUnicas.setEnabled(false);
+            jTFDiaSemana.setText("");
+            jTFDiaSemana.setEnabled(false);
+            //jTProgramação.removeAll();
+            DefaultTableModel model = (DefaultTableModel) jTProgramação.getModel();
+            model.setRowCount(0);
+            jPCalendar.setVisible(true);
+            jPCalendar.setEnabled(true);
+            jLbCalendar.setVisible(true);
+            jLbCalendar.setEnabled(true);
+        }else{
+            jTFDiaSemana.setEnabled(true);
+            jCBDatasUnicas.setEnabled(true);
+            jPCalendar.setVisible(false);
+            jPCalendar.setEnabled(false);
+            jLbCalendar.setVisible(false);
+            jLbCalendar.setEnabled(false);
+        }
+    }//GEN-LAST:event_jCBxIntervaloActionPerformed
+
+    private void jBtEnviarRangeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtEnviarRangeActionPerformed
+        jCBDatasUnicas.setEnabled(false);
+        jPCalendar.setVisible(false);
+        jPCalendar.setEnabled(false);
+        jLbCalendar.setVisible(false);
+        jLbCalendar.setEnabled(false);
+        
+        if (firstClickDate != null && secondClickDate != null) {
+            if (firstClickDate.after(secondClickDate)) {
+                Date temp = firstClickDate;
+                firstClickDate = secondClickDate;
+                secondClickDate = temp;
+            }
+
+            // Formatar as datas no padrão dd/MM/yyyy
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+
+            // Calendar para iterar pelas datas
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(firstClickDate);
+            
+            DefaultTableModel model = (DefaultTableModel) jTProgramação.getModel();
+            model.setRowCount(0); // Limpa as linhas antes de adicionar novas
+            // Loop para percorrer todas as datas entre firstClickDate e secondClickDate
+            while (!calendar.getTime().after(secondClickDate)) {
+                // Formatar a data atual e passá-la para o populateTable
+                String dataFormatada = sdf.format(calendar.getTime());
+                populateTable(dataFormatada,model);  // Passando a data formatada individualmente
+
+                // Avançar para o próximo dia
+                calendar.add(Calendar.DAY_OF_MONTH, 1);
+            }
+        } else {
+            // Caso as datas não estejam selecionadas corretamente
+            JOptionPane.showMessageDialog(this, "Selecione corretamente o intervalo de datas.");
+        }
+    }//GEN-LAST:event_jBtEnviarRangeActionPerformed
+
+    private void jBtResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtResetActionPerformed
+        resetDates();
+    }//GEN-LAST:event_jBtResetActionPerformed
+
+    private void jTFDiaSemanaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTFDiaSemanaActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTFDiaSemanaActionPerformed
+
     
     public void buscarAcao(){
         List<String> stringBusca = new ArrayList<>();
@@ -465,6 +665,8 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                 String dataProgramacao = bloco.getDataProgramacao();
                 StringBuilder sb = blocosPorData.computeIfAbsent(dataProgramacao, k -> new StringBuilder());
 
+                sb.append(("PROGRAMAÇÃO DO DIA " + jCBDatasUnicas.getSelectedItem().toString() + " - " +jTFDiaSemana.getText())).append(" "); 
+                
                 sb.append("Data Programação: ").append(dataProgramacao).append(" ");
 
                 String carretao = "";
@@ -488,7 +690,16 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                     sb.append("Responsável do Trabalho: ").append(bloco.getResponsavelDoTrabalho() != null ? bloco.getResponsavelDoTrabalho().getNomeDeGuerra() : "N/A").append(" ");
                 }
 
-                sb.append("Carro: ").append(bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A").append(carretao).append(" ");
+                
+                if(bloco.getCarroExtra() != null){
+                    if(bloco.getCarroExtra().equals("null")){
+                        sb.append("Carro: ").append(bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A").append(carretao).append(" ");
+                    }else{
+                        sb.append("Carro: ").append(bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A").append(carretao).append(", Carro Extra: ").append(bloco.getCarroExtra()).append(" ");
+                    }
+                }else{
+                    sb.append("Carro: ").append(bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A").append(carretao).append(" ");
+                }
                 sb.append("Data de Saída: ").append(bloco.getDataDeSaida()).append(" ");
                 sb.append("Data de Retorno: ").append(bloco.getDataDeRetorno()).append(" ");
                 sb.append("Horário de Saída: ").append(bloco.getHorarioDeSaida()).append("H ");
@@ -571,11 +782,21 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         configurarModeloTabela();
     }
     
-    public void populateTable(String dataEscolhida) {
-        DefaultTableModel model = (DefaultTableModel) jTProgramação.getModel();
-        model.setRowCount(0); // Limpa as linhas antes de adicionar novas
-
-        // Filtrando e adicionando dados de `blocos`
+    public void populateTable(String dataEscolhida, DefaultTableModel model) {
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate dataDate = LocalDate.parse(dataEscolhida, formato);
+        
+        boolean existeProgramacao = false;
+        for (Bloco bloco : blocos) {
+            if(bloco.getDataProgramacao().equals(dataEscolhida)){
+                existeProgramacao = true;
+            }
+        }
+        if(existeProgramacao){
+            model.addRow(new Object[] { "" });
+            model.addRow(new Object[] { "PROGRAMAÇÃO DO DIA " + dataEscolhida + " - " + dataDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.getDefault()).toUpperCase() });
+            model.addRow(new Object[] { "" });
+        }
         blocos.stream()
             .filter(obj -> obj.getDataProgramacao().equals(dataEscolhida))
             .forEach(bloco -> {
@@ -595,7 +816,15 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                 if(!bloco.getFinalidade().equals("VISITA COMERCIAL")){
                     model.addRow(new Object[] { "Responsável do Trabalho: " + (bloco.getResponsavelDoTrabalho() != null ? bloco.getResponsavelDoTrabalho().getNomeDeGuerra(): "N/A") });
                 }
-                model.addRow(new Object[] { "Carro: " + (bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A") + carretao });
+                if(bloco.getCarroExtra() != null){
+                    if(bloco.getCarroExtra().equals("null")){
+                        model.addRow(new Object[] { "Carro: " + (bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A") + carretao });
+                    }else{
+                        model.addRow(new Object[] { "Carro: " + (bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A") + carretao + ", Carro Extra: " + bloco.getCarroExtra()});
+                    }
+                }else{
+                    model.addRow(new Object[] { "Carro: " + (bloco.getCarro() != null ? bloco.getCarro().getNome() : "N/A") + carretao });
+                }
                 model.addRow(new Object[] { "Data de Saída: " + bloco.getDataDeSaida() });
                 model.addRow(new Object[] { "Data de Retorno: " + bloco.getDataDeRetorno() });
                 model.addRow(new Object[] { "Horário de Saída: " + bloco.getHorarioDeSaida() + "H"});
@@ -624,24 +853,23 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
             .ifPresent(info -> {
                 if(!Optional.ofNullable(info.getMecanicosInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")).equals("")){
                     model.addRow(new Object[] { "MECÂNICOS INTERNOS: " });
-                    model.addRow(new Object[] { Optional.ofNullable(info.getMecanicosInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
+                    model.addRow(new Object[] { Optional.ofNullable(info.getMecanicosInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) + "\n" });
                 }
                 if(!Optional.ofNullable(info.getEletricistasInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")).equals("")){
                     model.addRow(new Object[] { "ELETRICISTAS INTERNOS: " });
-                    model.addRow(new Object[] { Optional.ofNullable(info.getEletricistasInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
+                    model.addRow(new Object[] { Optional.ofNullable(info.getEletricistasInternos()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", "))  + "\n" });
                 }
                 if(!Optional.ofNullable(info.getFolgas()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")).equals("")){
                     model.addRow(new Object[] { "FOLGAS: " });
-                    model.addRow(new Object[] { Optional.ofNullable(info.getFolgas()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
+                    model.addRow(new Object[] { Optional.ofNullable(info.getFolgas()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", "))  + "\n" });
                 }
                 if(!Optional.ofNullable(info.getFerias()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")).equals("")){
                     model.addRow(new Object[] { "FÉRIAS: " });
-                    model.addRow(new Object[] { Optional.ofNullable(info.getFerias()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", ")) });
+                    model.addRow(new Object[] { Optional.ofNullable(info.getFerias()).orElse(new ArrayList<>()).stream().map(Usuario::getNomeDeGuerra).collect(Collectors.joining(", "))  + "\n" });
                 }
                 model.addRow(new Object[] { "" });
+                
             });
-        
-        
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -649,11 +877,17 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
     private javax.swing.JButton jBBuscar;
     private javax.swing.JButton jBCopiar;
     private javax.swing.JButton jBPDF;
+    private javax.swing.JButton jBtEnviarRange;
+    private javax.swing.JButton jBtReset;
     private javax.swing.JPanel jCB;
     private javax.swing.JComboBox<String> jCBDatasUnicas;
+    private javax.swing.JCheckBox jCBxIntervalo;
+    private com.toedter.calendar.JCalendar jCalendar1;
     private javax.swing.JLabel jLFundo;
     private javax.swing.JLabel jLProg;
     private javax.swing.JLabel jLProgramDia;
+    private javax.swing.JLabel jLbCalendar;
+    private javax.swing.JPanel jPCalendar;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextField jTFBuscar;
     private javax.swing.JTextField jTFDiaSemana;

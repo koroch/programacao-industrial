@@ -61,7 +61,7 @@ public class Sobre extends javax.swing.JFrame {
         jLFundo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/tela_de_fundo.jpeg"))); // NOI18N
         jLFundo.setVerifyInputWhenFocusTarget(false);
         getContentPane().add(jLFundo);
-        jLFundo.setBounds(0, 0, 1250, 710);
+        jLFundo.setBounds(0, -20, 1250, 710);
 
         setSize(new java.awt.Dimension(729, 569));
         setLocationRelativeTo(null);

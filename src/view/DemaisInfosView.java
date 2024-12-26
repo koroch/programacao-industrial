@@ -13,7 +13,6 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -43,7 +42,7 @@ public class DemaisInfosView extends javax.swing.JFrame {
      * @param demaisInfos
      */
    
-    public DemaisInfosView(List<DemaisInfos> demaisInfos, List<Bloco> blocos) {
+     public DemaisInfosView(List<DemaisInfos> demaisInfos, List<Bloco> blocos) {
         this.demaisInfosCadastro = demaisInfos;
         this.blocosCadastro = blocos;
         
@@ -74,16 +73,18 @@ public class DemaisInfosView extends javax.swing.JFrame {
                 }
                 jLColab.setModel(dLMUsers);
             }
-            jDCDataProgramacao.addPropertyChangeListener("date", evt -> {
-                atualizarListas();
-                atualizarUsersDisponiveis();
-                buscar();
-            });
+            
         } catch (IOException e ) {
             JOptionPane.showMessageDialog(null, "Erro no arquivo usuarios.txt, talvez ele ainda esteja vazio!");
         }
+        jDCDataProgramacao.addPropertyChangeListener("date", evt -> {
+            atualizarListas();
+            buscar();
+            atualizarUsersDisponiveis();
+        });
     }
    
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -125,6 +126,11 @@ public class DemaisInfosView extends javax.swing.JFrame {
         jDCDataProgramacao.setDate(new java.util.Date(new java.util.Date().getTime() + 86400000L)
         );
         jDCDataProgramacao.setDateFormatString("dd/MM/yyyy");
+        jDCDataProgramacao.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                jDCDataProgramacaoPropertyChange(evt);
+            }
+        });
         getContentPane().add(jDCDataProgramacao);
         jDCDataProgramacao.setBounds(160, 60, 420, 30);
 
@@ -766,6 +772,7 @@ public class DemaisInfosView extends javax.swing.JFrame {
             return;
         }
         boolean exists = false;
+        atualizarUsers();
         for (DemaisInfos x: demaisInfosCadastro) {
             if(x.getDataProgramacao().equals(dataProgramacao)){
                 exists = true;
@@ -800,7 +807,6 @@ public class DemaisInfosView extends javax.swing.JFrame {
                     });
                     jLtFerias.setModel(dLMFerias);
                 }
-                atualizarUsers();
                 return;
             }else{
                 dLMInternosMec.removeAllElements();
@@ -836,20 +842,20 @@ public class DemaisInfosView extends javax.swing.JFrame {
     private void atualizarUsers(){
         CadastroUsuario cadastroUser = new CadastroUsuario(usuarios);
         if (!cadastroUser.getListaAtualizadaUsuarios().isEmpty()) {
-            String[] itensArray = cadastroUser.getListaAtualizadaUsuarios()
-                .stream()
+            List<Usuario> usersAtt = cadastroUser.getListaAtualizadaUsuarios();
+            List<String> nomesNaoExistente = (List<String>) usersAtt.stream()
+                .filter(u -> u.getFuncao().equals("EXECUÇÃO") || u.getFuncao().equals("EXECUCAO"))
                 .map(Usuario::getNomeDeGuerra)
                 .sorted()
-                .toArray(String[]::new);
-
-            // Limpa o modelo de dados da lista `dLMUsers`.
+                .collect(Collectors.toList());
+            
             dLMUsers.removeAllElements();
 
             // Lista de itens que não estão em nenhuma das listas de "internos"
             List<String> itensNaoUsados = new ArrayList<>();
 
             // Adiciona ao `dLMUsers` apenas os itens que não estão em nenhuma das outras listas.
-            for (String item : itensArray) {
+            for (String item : nomesNaoExistente) {
                 boolean existsInAnyList = 
                     IntStream.range(0, dLMInternosMec.getSize()).mapToObj(dLMInternosMec::getElementAt).anyMatch(nome -> nome.equals(item)) ||
                     IntStream.range(0, dLMInternosElec.getSize()).mapToObj(dLMInternosElec::getElementAt).anyMatch(nome -> nome.equals(item)) ||
@@ -909,6 +915,10 @@ public class DemaisInfosView extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Nenhum colaborador selecionado na listagem!");
         }
     }//GEN-LAST:event_jBSubFeriasActionPerformed
+
+    private void jDCDataProgramacaoPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_jDCDataProgramacaoPropertyChange
+      
+    }//GEN-LAST:event_jDCDataProgramacaoPropertyChange
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jBAddFerias;
