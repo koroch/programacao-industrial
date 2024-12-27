@@ -119,16 +119,17 @@ public class ManutencaoView extends javax.swing.JFrame {
                         try {
                             //System.out.println("Início do processamento para carro: " + carro.getNome());
                             String dataInicio = incrementaUmDia(carro.getData_km_atual_automatica());
+                            String primeiraData = carro.getData_km_atual_automatica();
 
                             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
                             Date dataInicioDate = sdf.parse(dataInicio);
                             Date dataHojeDate = sdf.parse(dataHoje);
-
+                            System.out.println("data inicio: "+primeiraData);
+                            System.out.println("data hoje: "+dataHoje);
+                            
                             if (dataInicioDate.compareTo(dataHojeDate) <= 0) {
-                                fetchData(dataInicio, dataHoje, carro.getImei_rastreador(), carros);
-                            } else {
-                                //System.out.println("Carro " + carro.getNome() + " já está atualizado!");
-                            }
+                                fetchData(primeiraData, dataHoje, carro.getImei_rastreador(), carros);
+                            } 
 
                             System.out.println("Fim do processamento para carro: " + carro.getNome());
 
@@ -161,7 +162,12 @@ public class ManutencaoView extends javax.swing.JFrame {
     
     private void preencherTabela(List<Carro> carros) {
         // Criar o modelo da tabela
-        DefaultTableModel modelo = new DefaultTableModel();
+        DefaultTableModel modelo = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         
         // Definir as colunas
         modelo.setColumnIdentifiers(new String[]{"Carro", "Data de Cadastro", "Data Att Automática", "KM Atualizado", "KM Última Troca", "KM Próxima Troca", "% de Troca"});
@@ -237,14 +243,9 @@ public class ManutencaoView extends javax.swing.JFrame {
     private String incrementaUmDia(String data) throws Exception {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
         Date parsedDate = dateFormat.parse(data);
-
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(parsedDate);
         calendar.add(Calendar.DAY_OF_MONTH, 1); // Adiciona 1 dia
-
-        System.out.println("velha data " +data);
-        
-        System.out.println("nova data " +dateFormat.format(calendar.getTime()));
         return dateFormat.format(calendar.getTime());
     }
 
@@ -255,13 +256,13 @@ public class ManutencaoView extends javax.swing.JFrame {
 
             // Cria a requisição de autenticação
             HttpPost authRequest = new HttpPost(AUTH_URL);
-            authRequest.setHeader("Authorization", "Bearer token");
+            authRequest.setHeader("Authorization", "Bearer ...");
             authRequest.setHeader("User-Agent", "Mozilla/5.0");
 
             // Configura o corpo da requisição como multipart/form-data
             HttpEntity authEntity = MultipartEntityBuilder.create()
-                    .addTextBody("usuario", "user")
-                    .addTextBody("senha", "senha")
+                    .addTextBody("usuario", "...")
+                    .addTextBody("senha", "...")
                     .build();
             authRequest.setEntity(authEntity);
 
@@ -307,10 +308,11 @@ public class ManutencaoView extends javax.swing.JFrame {
             String responseBody = EntityUtils.toString(response.getEntity());
             if (statusCode == 200) {
                 JsonObject jsonObject = JsonParser.parseString(responseBody).getAsJsonObject();
+                System.out.println(jsonObject);
 
                 if (jsonObject.has("data")) {
                     JsonObject data = jsonObject.getAsJsonObject("data");
-
+                    
                     // Verificar e acessar "emei"
                     String imei = data.has("imei") ? data.get("imei").getAsString() : "Imei não disponível";
 
@@ -377,6 +379,7 @@ public class ManutencaoView extends javax.swing.JFrame {
         jLProgresso = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTbManut = new javax.swing.JTable();
+        jButton1 = new javax.swing.JButton();
         jLFundo = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -428,14 +431,23 @@ public class ManutencaoView extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
-        jTbManut.setEnabled(false);
         jTbManut.setFocusable(false);
+        jTbManut.setOpaque(false);
         jTbManut.setRequestFocusEnabled(false);
-        jTbManut.setRowSelectionAllowed(false);
         jScrollPane1.setViewportView(jTbManut);
 
         jCB.add(jScrollPane1);
         jScrollPane1.setBounds(40, 60, 1000, 270);
+
+        jButton1.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jButton1.setText("Histórico");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        jCB.add(jButton1);
+        jButton1.setBounds(40, 360, 110, 40);
 
         getContentPane().add(jCB);
         jCB.setBounds(0, 110, 1120, 430);
@@ -450,9 +462,16 @@ public class ManutencaoView extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        List<Carro> carros = new CadastroCarro(carrosMenu).getListaAtualizadaCarros();
+        HistoricoManutView historicoManut = new HistoricoManutView(carros);  
+        historicoManut.setVisible(true);
+    }//GEN-LAST:event_jButton1ActionPerformed
+
    
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButton1;
     private javax.swing.JPanel jCB;
     private javax.swing.JLabel jLFundo;
     private javax.swing.JLabel jLProgresso;

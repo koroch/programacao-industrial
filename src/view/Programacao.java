@@ -133,9 +133,10 @@ public class Programacao extends javax.swing.JFrame {
         }
 
         initComponents();
-        jLbAlert.setVisible(false);
+        jLbAlertVermelho.setVisible(false);
         jLbAlertaLaranja.setVisible(false);
         jLbVermelho.setVisible(false);
+        jLbAlertLaranja.setVisible(false);
         
         maximizarJanela();
 
@@ -372,17 +373,21 @@ public class Programacao extends javax.swing.JFrame {
         // Agendar a execução da função a cada 30 segundos
         scheduler.scheduleAtFixedRate(() -> {
             if(manutencao.getQtdAletasVermelho(carros) > 0){
-                jLbAlert.setText("Atenção, faça troca de óleo!");
-                jLbAlert.setVisible(true);
+                jLbAlertVermelho.setText("Atenção, faça troca de óleo!");
+                jLbAlertVermelho.setVisible(true);
                 jLbVermelho.setVisible(true);
-            } else if( manutencao.getQtdAletasLaranja(carros) > 0) {
-                jLbAlert.setText("Revise o óleo dos carros!");
-                jLbAlert.setVisible(true);
+            } else {
+                jLbAlertVermelho.setVisible(false);
+                jLbVermelho.setVisible(false);
+            }
+            
+            if( manutencao.getQtdAletasLaranja(carros) > 0) {
+                jLbAlertLaranja.setText("Revise o óleo dos carros!");
+                jLbAlertLaranja.setVisible(true);
                 jLbAlertaLaranja.setVisible(true);
             } else {
-                jLbAlert.setVisible(false);
                 jLbAlertaLaranja.setVisible(false);
-                jLbVermelho.setVisible(false);
+                jLbAlertLaranja.setVisible(false);
             }
             
             System.out.println("Vermelho: "+manutencao.getQtdAletasVermelho(carros));
@@ -561,7 +566,8 @@ public class Programacao extends javax.swing.JFrame {
         jCBCarroExtra = new javax.swing.JComboBox<>();
         jLbAlertaLaranja = new javax.swing.JLabel();
         jLbVermelho = new javax.swing.JLabel();
-        jLbAlert = new javax.swing.JLabel();
+        jLbAlertVermelho = new javax.swing.JLabel();
+        jLbAlertLaranja = new javax.swing.JLabel();
         jLFundo = new javax.swing.JLabel();
         jMenuBar = new javax.swing.JMenuBar();
         jMCadastros = new javax.swing.JMenu();
@@ -1185,18 +1191,25 @@ public class Programacao extends javax.swing.JFrame {
         jLbAlertaLaranja.setPreferredSize(new java.awt.Dimension(50, 50));
         jLbAlertaLaranja.setRequestFocusEnabled(false);
         jPFundo.add(jLbAlertaLaranja);
-        jLbAlertaLaranja.setBounds(1070, 40, 40, 50);
+        jLbAlertaLaranja.setBounds(1070, 120, 40, 50);
 
         jLbVermelho.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/vermelho.png"))); // NOI18N
         jPFundo.add(jLbVermelho);
         jLbVermelho.setBounds(1070, 40, 40, 50);
 
-        jLbAlert.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        jLbAlert.setForeground(new java.awt.Color(255, 102, 0));
-        jLbAlert.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLbAlert.setText("  ");
-        jPFundo.add(jLbAlert);
-        jLbAlert.setBounds(1010, 90, 160, 16);
+        jLbAlertVermelho.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLbAlertVermelho.setForeground(new java.awt.Color(255, 102, 0));
+        jLbAlertVermelho.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLbAlertVermelho.setText("  ");
+        jPFundo.add(jLbAlertVermelho);
+        jLbAlertVermelho.setBounds(1010, 90, 160, 16);
+
+        jLbAlertLaranja.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLbAlertLaranja.setForeground(new java.awt.Color(255, 102, 0));
+        jLbAlertLaranja.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLbAlertLaranja.setText("  ");
+        jPFundo.add(jLbAlertLaranja);
+        jLbAlertLaranja.setBounds(1010, 170, 160, 16);
 
         getContentPane().add(jPFundo);
         jPFundo.setBounds(0, 40, 1180, 580);
@@ -1668,6 +1681,11 @@ public class Programacao extends javax.swing.JFrame {
         
         if (String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE")) {
             JOptionPane.showMessageDialog(null, "Você precisa selecionar uma Finalidade!", "Atenção", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        if (String.valueOf(jCBCarro.getSelectedItem()).equals("N/A")) {
+            JOptionPane.showMessageDialog(null, "Você precisa selecionar um carro!", "Atenção", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -2842,7 +2860,8 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JLabel jLResponsavel;
     private javax.swing.JList<String> jLSelec;
     private javax.swing.JLabel jLSelecionados;
-    private javax.swing.JLabel jLbAlert;
+    private javax.swing.JLabel jLbAlertLaranja;
+    private javax.swing.JLabel jLbAlertVermelho;
     private javax.swing.JLabel jLbAlertaLaranja;
     private javax.swing.JLabel jLbVermelho;
     private javax.swing.JMenu jMCadastros;
