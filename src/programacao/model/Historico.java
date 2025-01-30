@@ -6,7 +6,7 @@ package programacao.model;
 
 /**
  *
- * @author SGA
+ * @author Koroch
  */
 public class Historico {
     String placaCarro;

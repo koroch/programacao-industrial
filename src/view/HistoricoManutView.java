@@ -12,9 +12,12 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import programacao.model.Carro;
 
@@ -23,10 +26,10 @@ import programacao.model.Carro;
  * @author Koroch
  */
 public class HistoricoManutView extends javax.swing.JFrame {
-    
     private List<Carro> carrosManut = new ArrayList<>();
     private List<Historico> historicos = new ArrayList<>();
     private List<String> linhasArquivoHist = new ArrayList<>();
+    
     /**
      * Creates new form ManutencaoView
      * @param carros
@@ -65,9 +68,15 @@ public class HistoricoManutView extends javax.swing.JFrame {
                     String dataKm = jTbManut.getValueAt(linhaSelecionada, 1).toString();
                     String quilometragem = jTbManut.getValueAt(linhaSelecionada, 2).toString();
                     String observacao = jTbManut.getValueAt(linhaSelecionada, 3).toString();
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
                     jCBCarro.setSelectedItem(carro);
-                    jDCDataKM.setDateFormatString(dataKm);
+                    try {
+                        jDCDataKM.setDate(dateFormat.parse(dataKm));
+                    } catch (ParseException ex) {
+                        Logger.getLogger(HistoricoManutView.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    System.out.println(jDCDataKM.getDate());
                     jFTFKMAtt.setText(quilometragem);
                     jTFObs.setText(observacao);
                 }
@@ -162,6 +171,7 @@ public class HistoricoManutView extends javax.swing.JFrame {
         jFTFKMAtt = new javax.swing.JFormattedTextField();
         jBOk = new javax.swing.JButton();
         jBDelete = new javax.swing.JButton();
+        jBLimpaSelec = new javax.swing.JButton();
         jLFundo = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -241,6 +251,12 @@ public class HistoricoManutView extends javax.swing.JFrame {
         jLbObs.setToolTipText("");
         jCB.add(jLbObs);
         jLbObs.setBounds(660, 480, 90, 14);
+
+        jTFObs.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTFObsMouseClicked(evt);
+            }
+        });
         jCB.add(jTFObs);
         jTFObs.setBounds(730, 470, 300, 30);
 
@@ -251,15 +267,35 @@ public class HistoricoManutView extends javax.swing.JFrame {
         jCB.add(JLbCarro);
         JLbCarro.setBounds(50, 480, 40, 14);
 
+        jCBCarro.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jCBCarroMouseClicked(evt);
+            }
+        });
         jCB.add(jCBCarro);
         jCBCarro.setBounds(90, 470, 150, 30);
 
         jDCDataKM.setToolTipText("Dia/Mês/Ano");
         jDCDataKM.setDate(new java.util.Date(new java.util.Date().getTime()));
         jDCDataKM.setDateFormatString("dd/MM/yyyy");
+        jDCDataKM.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jDCDataKMFocusGained(evt);
+            }
+        });
+        jDCDataKM.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jDCDataKMMouseClicked(evt);
+            }
+        });
         jDCDataKM.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
             public void propertyChange(java.beans.PropertyChangeEvent evt) {
                 jDCDataKMPropertyChange(evt);
+            }
+        });
+        jDCDataKM.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jDCDataKMKeyPressed(evt);
             }
         });
         jCB.add(jDCDataKM);
@@ -267,6 +303,11 @@ public class HistoricoManutView extends javax.swing.JFrame {
 
         jFTFKMAtt.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.NumberFormatter(new java.text.DecimalFormat("###############"))));
         jFTFKMAtt.setToolTipText("");
+        jFTFKMAtt.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jFTFKMAttMouseClicked(evt);
+            }
+        });
         jCB.add(jFTFKMAtt);
         jFTFKMAtt.setBounds(330, 470, 100, 30);
 
@@ -289,6 +330,16 @@ public class HistoricoManutView extends javax.swing.JFrame {
         jCB.add(jBDelete);
         jBDelete.setBounds(950, 510, 80, 30);
 
+        jBLimpaSelec.setBackground(new java.awt.Color(204, 204, 204));
+        jBLimpaSelec.setText("Limpar Seleção");
+        jBLimpaSelec.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBLimpaSelecActionPerformed(evt);
+            }
+        });
+        jCB.add(jBLimpaSelec);
+        jBLimpaSelec.setBounds(730, 510, 120, 30);
+
         getContentPane().add(jCB);
         jCB.setBounds(0, 50, 1120, 550);
 
@@ -303,6 +354,7 @@ public class HistoricoManutView extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jDCDataKMPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_jDCDataKMPropertyChange
+        
     }//GEN-LAST:event_jDCDataKMPropertyChange
 
     private void jBOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBOkActionPerformed
@@ -316,11 +368,11 @@ public class HistoricoManutView extends javax.swing.JFrame {
         }
         if(car!=null){
             for(Historico hist: historicos){
-                if(car.getPlaca().toUpperCase().equals(hist.getPlacaCarro()) && Integer.parseInt(jFTFKMAtt.getText()) == hist.getKmAtt()){
+                if(car.getPlaca().toUpperCase().equals(hist.getPlacaCarro()) && Integer.parseInt(jFTFKMAtt.getText().trim()) == hist.getKmAtt()){
                     exists = true;
                     hist.setDataAtt(jDCDataKM.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataKM.getDate()));
-                    hist.setKmAtt(Integer.parseInt(jFTFKMAtt.getText()));
-                    hist.setObservacao(jTFObs.getText());
+                    hist.setKmAtt(Integer.parseInt(jFTFKMAtt.getText().trim()));
+                    hist.setObservacao(jTFObs.getText().trim());
                     break;
                 }
             } 
@@ -329,7 +381,6 @@ public class HistoricoManutView extends javax.swing.JFrame {
                 for (Carro x: carrosManut) {
                     if(x.getNome().toUpperCase().equals(jCBCarro.getSelectedItem().toString())){
                         Historico hist = new Historico(x.getPlaca(), Integer.parseInt(jFTFKMAtt.getText()), jDCDataKM.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataKM.getDate()), jTFObs.getText());
-                        System.out.println("nao existe: "+hist);
                         historicos.add(hist);
                         limparCampos();
                         break;
@@ -362,7 +413,7 @@ public class HistoricoManutView extends javax.swing.JFrame {
         }
         if(car!=null){
             System.out.println("Tenho carro");
-            if(jFTFKMAtt.getText().equals("")){
+            if(jFTFKMAtt.getText().trim().equals("")){
                 JOptionPane.showMessageDialog(null, "Selecione o carro e informe a quilometragem para fazer a remoção do histórico correto!");
                 return;
             }
@@ -403,6 +454,42 @@ public class HistoricoManutView extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jBDeleteActionPerformed
 
+    private void removeSelecao(){
+        if (jTbManut.getSelectedRow() == -1) { // Nenhuma linha selecionada
+            return;
+        }
+        jDCDataKM.setDate(null);
+        jTbManut.clearSelection();
+    }
+    
+    private void jCBCarroMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jCBCarroMouseClicked
+
+    }//GEN-LAST:event_jCBCarroMouseClicked
+
+    private void jFTFKMAttMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jFTFKMAttMouseClicked
+
+    }//GEN-LAST:event_jFTFKMAttMouseClicked
+
+    private void jDCDataKMMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jDCDataKMMouseClicked
+
+    }//GEN-LAST:event_jDCDataKMMouseClicked
+
+    private void jTFObsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTFObsMouseClicked
+
+    }//GEN-LAST:event_jTFObsMouseClicked
+
+    private void jDCDataKMFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jDCDataKMFocusGained
+        
+    }//GEN-LAST:event_jDCDataKMFocusGained
+
+    private void jDCDataKMKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jDCDataKMKeyPressed
+
+    }//GEN-LAST:event_jDCDataKMKeyPressed
+
+    private void jBLimpaSelecActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBLimpaSelecActionPerformed
+        removeSelecao();
+    }//GEN-LAST:event_jBLimpaSelecActionPerformed
+
     private void limparCampos(){
         jTFObs.setText("");
         jFTFKMAtt.setText("");
@@ -414,6 +501,7 @@ public class HistoricoManutView extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel JLbCarro;
     private javax.swing.JButton jBDelete;
+    private javax.swing.JButton jBLimpaSelec;
     private javax.swing.JButton jBOk;
     private javax.swing.JPanel jCB;
     private javax.swing.JComboBox<String> jCBCarro;

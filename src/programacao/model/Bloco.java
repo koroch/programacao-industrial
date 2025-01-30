@@ -5,6 +5,7 @@
 package programacao.model;
 
 import java.util.List;
+import java.util.Objects;
 import static view.Programacao.ultimoIdBloco;
 
 /**
@@ -59,8 +60,8 @@ public class Bloco {
     }
 
     public Bloco(String dataProgramacao, String projeto, Cliente cliente, String finalidade, List<Usuario> equipe, Usuario responsavelDoTrabalho, Carro carro, String carretao, String dataDeSaida, String dataDeRetorno, String horarioDeSaida, String horarioDeTrabalhoInicio, String horarioDeTrabalhoFimMeioDia, String horarioDeTrabalhoInicioMeioDia, String horarioDeTrabalhoFim, String almoco, String janta, Hotel hospedagem, String observacoes, String carroExtra) {
-        this.Id = ultimoIdBloco + 1;
         ultimoIdBloco++;
+        this.Id = ultimoIdBloco;
         this.dataProgramacao = dataProgramacao;
         this.projeto = projeto;
         this.cliente = cliente;
@@ -82,7 +83,7 @@ public class Bloco {
         this.observacoes = observacoes;
         this.carroExtra = carroExtra;
     }
-
+    
     public String getCarroExtra() {
         return carroExtra;
     }
@@ -258,5 +259,39 @@ public class Bloco {
     @Override
     public String toString() {
         return Id + "|" + dataProgramacao + "|" + projeto + "|" + cliente + "|" + equipe + "|" + responsavelDoTrabalho + "|" + carro + "|" + dataDeSaida + "|" + dataDeRetorno + "|" + horarioDeSaida + "|" + horarioDeTrabalhoInicio + "|" + horarioDeTrabalhoFimMeioDia + "|" + horarioDeTrabalhoInicioMeioDia + "|" + horarioDeTrabalhoFim + "|" + almoco + "|" + janta + "|" + hospedagem + "|" + observacoes + "|" + carroExtra;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Bloco bloco = (Bloco) o;
+        // Ignora dataProgramacao na comparação de igualdade
+        return Objects.equals(projeto, bloco.projeto) &&
+               Objects.equals(cliente, bloco.cliente) &&
+               Objects.equals(finalidade, bloco.finalidade) &&
+               Objects.equals(equipe, bloco.equipe) &&
+               Objects.equals(responsavelDoTrabalho, bloco.responsavelDoTrabalho) &&
+               Objects.equals(carro, bloco.carro) &&
+               Objects.equals(carretao, bloco.carretao) &&
+               Objects.equals(dataDeSaida, bloco.dataDeSaida) &&
+               Objects.equals(dataDeRetorno, bloco.dataDeRetorno) &&
+               Objects.equals(horarioDeSaida, bloco.horarioDeSaida) &&
+               Objects.equals(horarioDeTrabalhoInicio, bloco.horarioDeTrabalhoInicio) &&
+               Objects.equals(horarioDeTrabalhoFimMeioDia, bloco.horarioDeTrabalhoFimMeioDia) &&
+               Objects.equals(horarioDeTrabalhoInicioMeioDia, bloco.horarioDeTrabalhoInicioMeioDia) &&
+               Objects.equals(horarioDeTrabalhoFim, bloco.horarioDeTrabalhoFim) &&
+               Objects.equals(almoco, bloco.almoco) &&
+               Objects.equals(janta, bloco.janta) &&
+               Objects.equals(hospedagem, bloco.hospedagem) &&
+               Objects.equals(observacoes, bloco.observacoes) &&
+               Objects.equals(carroExtra, bloco.carroExtra);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(projeto, cliente, finalidade, equipe, responsavelDoTrabalho, carro, carretao, dataDeSaida, dataDeRetorno,
+                            horarioDeSaida, horarioDeTrabalhoInicio, horarioDeTrabalhoFimMeioDia, horarioDeTrabalhoInicioMeioDia,
+                            horarioDeTrabalhoFim, almoco, janta, hospedagem, observacoes, carroExtra);
     }
 }

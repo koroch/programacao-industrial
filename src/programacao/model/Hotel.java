@@ -29,8 +29,8 @@ public class Hotel {
     }
 
     public Hotel(String nome, String cidade, Estado estado, String endereco) {
-        this.id = ultimoIdHotel + 1;
         ultimoIdHotel++;
+        this.id = ultimoIdHotel;
         this.nome = nome;
         this.cidade = cidade;
         this.estado = estado;

@@ -317,7 +317,7 @@ public class CadastroHotel extends javax.swing.JFrame {
         if(!validaNomeUnico())
             return;
         
-        Hotel hotel = new Hotel(jTFNome.getText().toUpperCase(),jTFCidade.getText().toUpperCase(),Estado.valueOf((String)jCBEstado.getSelectedItem()), jTFEndereco.getText().toUpperCase());
+        Hotel hotel = new Hotel(jTFNome.getText().trim().toUpperCase(),jTFCidade.getText().trim().toUpperCase(),Estado.valueOf((String)jCBEstado.getSelectedItem()), jTFEndereco.getText().trim().toUpperCase());
         hoteisCadastro.add(hotel);
         
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("hoteis.txt", true))) {
@@ -337,11 +337,12 @@ public class CadastroHotel extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTFEnderecoActionPerformed
     public boolean isStringValid(String string) {
+        
         return string.matches("^[0-9a-zA-ZÀ-ÿ]+( [0-9a-zA-ZÀ-ÿ]+)*$");
     }
     
     public boolean validaNome(){
-        if(!isStringValid(jTFNome.getText())){
+        if(!isStringValid(jTFNome.getText().trim())){
             JOptionPane.showMessageDialog(null, "Ops! Preencha o nome corretamente, pois ele é o identificador único!");
             return false;
         }
@@ -349,7 +350,7 @@ public class CadastroHotel extends javax.swing.JFrame {
     }
         
     public boolean validaCidade(){
-        if(!isStringValid(jTFCidade.getText())){
+        if(!isStringValid(jTFCidade.getText().trim())){
             JOptionPane.showMessageDialog(null, "Ops! Preencha a Cidade corretamente!");
             return false;
         }

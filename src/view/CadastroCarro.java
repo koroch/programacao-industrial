@@ -4,9 +4,7 @@
  */
 package view;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
@@ -17,7 +15,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import programacao.model.Carro;
-import programacao.model.Historico;
 
 /**
  *
@@ -25,8 +22,6 @@ import programacao.model.Historico;
  */
 public class CadastroCarro extends javax.swing.JFrame {
     private static List<Carro> carrosCadastro = new ArrayList<>();
-    private List<Historico> historicos = new ArrayList<>();
-    private List<String> linhasArquivoHist = new ArrayList<>();
     /**
      * Creates new form CadastroCarro
      * @param carros
@@ -34,26 +29,6 @@ public class CadastroCarro extends javax.swing.JFrame {
     public CadastroCarro(List<Carro> carros) {
         CadastroCarro.carrosCadastro = carros;
         initComponents();
-        
-        try (BufferedReader br = new BufferedReader(new FileReader("historicos.txt"))) {
-            String linha;
-            while ((linha = br.readLine()) != null) {
-                linhasArquivoHist.add(linha);
-            }
-
-            linhasArquivoHist.forEach(elemento -> {
-                String[] dados = elemento.split("\\|");
-                int qtdArray = dados.length;
-                historicos.add(new Historico(
-                        dados[0].trim(),
-                        Integer.parseInt(dados[1].trim()),
-                        (qtdArray >= 3 ? dados[2].trim() : null),
-                        (qtdArray >= 4 ? dados[3].trim() : null)
-                ));
-            });
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Erro no arquivo historicos.txt, talvez ele ainda esteja vazio!");
-        }
     }
 
     public List<Carro> getListaAtualizadaCarros() {
@@ -90,6 +65,8 @@ public class CadastroCarro extends javax.swing.JFrame {
         jLKmUltimaTroca = new javax.swing.JLabel();
         jLDataKmAtual = new javax.swing.JLabel();
         jDCDataKmAtual = new com.toedter.calendar.JDateChooser();
+        jCBMilKm = new javax.swing.JComboBox<>();
+        jLDataKmAtual1 = new javax.swing.JLabel();
         jLFundo = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -231,7 +208,7 @@ public class CadastroCarro extends javax.swing.JFrame {
         jTFkmAtual.setBounds(40, 230, 160, 30);
 
         jLkmatual.setForeground(new java.awt.Color(255, 255, 255));
-        jLkmatual.setText("KM extraída:");
+        jLkmatual.setText("KM atual:");
         getContentPane().add(jLkmatual);
         jLkmatual.setBounds(40, 210, 140, 16);
 
@@ -264,6 +241,15 @@ public class CadastroCarro extends javax.swing.JFrame {
         });
         getContentPane().add(jDCDataKmAtual);
         jDCDataKmAtual.setBounds(40, 290, 160, 30);
+
+        jCBMilKm.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "10", "5" }));
+        getContentPane().add(jCBMilKm);
+        jCBMilKm.setBounds(230, 290, 140, 30);
+
+        jLDataKmAtual1.setForeground(new java.awt.Color(255, 255, 255));
+        jLDataKmAtual1.setText("Troca do óleo: (mil Km)");
+        getContentPane().add(jLDataKmAtual1);
+        jLDataKmAtual1.setBounds(230, 270, 170, 16);
 
         jLFundo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/tela_de_fundo.jpeg"))); // NOI18N
         getContentPane().add(jLFundo);
@@ -340,7 +326,7 @@ public class CadastroCarro extends javax.swing.JFrame {
         if(!validaPlacaUnica())
             return;
         
-        Carro carro = new Carro(jTFNome.getText().toUpperCase(),jTFMarca.getText().toUpperCase(),jFTFPlaca.getText().toUpperCase(), jFTFImei.getText(), Integer.parseInt(jTFkmAtual.getText()), jDCDataKmAtual.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataKmAtual.getDate()), Integer.parseInt(jTFKmUltimaTroca.getText()), jDCDataKmAtual.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataKmAtual.getDate()));
+        Carro carro = new Carro(jTFNome.getText().trim().toUpperCase(),jTFMarca.getText().trim().toUpperCase(),jFTFPlaca.getText().trim().toUpperCase(), jFTFImei.getText().trim(), Integer.parseInt(jTFkmAtual.getText().trim()), jDCDataKmAtual.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataKmAtual.getDate()), Integer.parseInt(jTFKmUltimaTroca.getText().trim()), jDCDataKmAtual.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataKmAtual.getDate()),Integer.parseInt(jCBMilKm.getSelectedItem().toString().trim()));
         carrosCadastro.add(carro);
         System.out.println("User"+ carro.toString());
         
@@ -372,18 +358,7 @@ public class CadastroCarro extends javax.swing.JFrame {
                 x.setKm_atual(Integer.parseInt(jTFkmAtual.getText()));
                 x.setData_km_atual(jDCDataKmAtual.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataKmAtual.getDate()));
                 x.setKm_ultima_troca(Integer.parseInt(jTFKmUltimaTroca.getText()));
-                
-                Historico historico = new Historico(x.getPlaca(), Integer.parseInt(jTFkmAtual.getText()), jDCDataKmAtual.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataKmAtual.getDate()), "");
-                historicos.add(historico);
-                
-                try (BufferedWriter writer = new BufferedWriter(new FileWriter("historicos.txt", true))) {
-                    writer.write(historico.toString());
-                    writer.newLine();
-                    JOptionPane.showMessageDialog(null, "Historico gravado com sucesso!");
-                } catch (IOException e) {
-                    JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
-                }
-                        
+                x.setMultiploProximaTroca(Integer.parseInt(jCBMilKm.getSelectedItem().toString()));
                 break;
             }
         }
@@ -409,7 +384,7 @@ public class CadastroCarro extends javax.swing.JFrame {
 
     private void jBBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBBuscarActionPerformed
         try {
-            if(jTFMarca.getText().equals("") && !jTFNome.getText().equals("")){
+            if(jTFMarca.getText().trim().equals("") && !jTFNome.getText().trim().equals("")){
                 for (Carro x: carrosCadastro) {
                     if(x.getNome().toUpperCase().contains(jTFNome.getText().toUpperCase())){
                         jTFNome.setText(x.getNome());
@@ -419,12 +394,13 @@ public class CadastroCarro extends javax.swing.JFrame {
                         jTFkmAtual.setText(String.valueOf(x.getKm_atual()));
                         jDCDataKmAtual.setDate(new SimpleDateFormat("dd/MM/yyyy").parse(x.getData_km_atual()));
                         jTFKmUltimaTroca.setText(String.valueOf(x.getKm_ultima_troca()));
+                        jCBMilKm.setSelectedItem(String.valueOf(x.getMultiploProximaTroca()));
                         break;
                     }
                 }
             }
 
-            if(!jTFMarca.getText().equals("") && jTFNome.getText().equals("")){
+            if(!jTFMarca.getText().trim().equals("") && jTFNome.getText().trim().equals("")){
                 for (Carro x: carrosCadastro) {
                     if(x.getMarca().toUpperCase().contains(jTFMarca.getText().toUpperCase())){
                         jTFNome.setText(x.getNome());
@@ -435,7 +411,7 @@ public class CadastroCarro extends javax.swing.JFrame {
                 }
             }
 
-            if(jTFMarca.getText().equals("") && jTFNome.getText().equals("")){
+            if(jTFMarca.getText().trim().equals("") && jTFNome.getText().trim().equals("")){
                 if(!validaNome())
                 return;
             }
@@ -457,6 +433,7 @@ public class CadastroCarro extends javax.swing.JFrame {
         jTFkmAtual.setText("");
         jDCDataKmAtual.setDate(new java.util.Date(new java.util.Date().getTime()));
         jTFKmUltimaTroca.setText("");
+        jCBMilKm.setSelectedItem("10");
     }//GEN-LAST:event_jBLimparActionPerformed
 
     private void jTFNomeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTFNomeActionPerformed
@@ -480,7 +457,7 @@ public class CadastroCarro extends javax.swing.JFrame {
     }
     
     public boolean validaNome(){
-        if(!isStringValid(jTFNome.getText())){
+        if(!isStringValid(jTFNome.getText().trim())){
             JOptionPane.showMessageDialog(null, "Ops! Preencha o nome corretamente!");
             return false;
         }
@@ -488,7 +465,7 @@ public class CadastroCarro extends javax.swing.JFrame {
     }
         
     public boolean validaMarca(){
-        if(!isStringValid(jTFMarca.getText())){
+        if(!isStringValid(jTFMarca.getText().trim())){
             JOptionPane.showMessageDialog(null, "Ops! Preencha a marca corretamente!");
             return false;
         }
@@ -501,7 +478,7 @@ public class CadastroCarro extends javax.swing.JFrame {
     }
     
     public boolean validaPlaca(){
-        if(!isPlacaValid(jFTFPlaca.getText())){
+        if(!isPlacaValid(jFTFPlaca.getText().trim())){
             JOptionPane.showMessageDialog(null, "Ops! Preencha a placa corretamente, pois ela é o identificador único!");
             return false;
         }
@@ -523,10 +500,12 @@ public class CadastroCarro extends javax.swing.JFrame {
     private javax.swing.JButton jBCriarUser;
     private javax.swing.JButton jBLimpar;
     private javax.swing.JButton jBRemoverUser;
+    private javax.swing.JComboBox<String> jCBMilKm;
     private com.toedter.calendar.JDateChooser jDCDataKmAtual;
     private javax.swing.JFormattedTextField jFTFImei;
     private javax.swing.JFormattedTextField jFTFPlaca;
     private javax.swing.JLabel jLDataKmAtual;
+    private javax.swing.JLabel jLDataKmAtual1;
     private javax.swing.JLabel jLFundo;
     private javax.swing.JLabel jLImei;
     private javax.swing.JLabel jLKmUltimaTroca;

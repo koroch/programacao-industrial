@@ -29,8 +29,8 @@ public class DemaisInfos {
     }
 
     public DemaisInfos(String dataProgramacao, List<Usuario> mecanicosInternos, List<Usuario> eletricistasInternos, List<Usuario> folgas, List<Usuario> ferias) {
-        this.id = ultimoIdDemaisInfos + 1;
         ultimoIdDemaisInfos++;
+        this.id = ultimoIdDemaisInfos;
         this.dataProgramacao = dataProgramacao;
         this.mecanicosInternos = mecanicosInternos;
         this.eletricistasInternos = eletricistasInternos;

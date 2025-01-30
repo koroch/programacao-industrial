@@ -83,8 +83,6 @@ public class DemaisInfosView extends javax.swing.JFrame {
             atualizarUsersDisponiveis();
         });
     }
-   
-    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -602,6 +600,7 @@ public class DemaisInfosView extends javax.swing.JFrame {
                 .collect(Collectors.toList());
         }
         DemaisInfos demaisInfosLocal = new DemaisInfos(dataProgramacao,internosMec,internosElec,folgas,ferias);
+        demaisInfosCadastro.add(demaisInfosLocal);
         String idsMecanicos =  demaisInfosLocal.getMecanicosInternos().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
         String idsEletricistas =  demaisInfosLocal.getEletricistasInternos().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
         String idFolgas =  demaisInfosLocal.getFolgas().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
@@ -625,11 +624,15 @@ public class DemaisInfosView extends javax.swing.JFrame {
 
     private void jBAlterarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBAlterarActionPerformed
         boolean exists = false;
+        List<Usuario> internosMec = new ArrayList<>();
+        List<Usuario> internosElec = new ArrayList<>();
+        List<Usuario> folgasList = new ArrayList<>();
+        List<Usuario> feriasList = new ArrayList<>();
+        
         for (DemaisInfos x : demaisInfosCadastro) {
             if(x.getDataProgramacao().contains(jDCDataProgramacao.getDate()==null?"":new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate()))){
                 exists = true;
-
-                List<Usuario> internosMec = new ArrayList<>();
+                
                 if (dLMInternosMec.getSize() > 0) {
                     List<String> internosElecString = new ArrayList<>(
                         IntStream.range(0, dLMInternosMec.getSize())
@@ -642,7 +645,7 @@ public class DemaisInfosView extends javax.swing.JFrame {
                         )
                         .collect(Collectors.toList());
                 }
-                List<Usuario> internosElec = new ArrayList<>();
+                
                 if (dLMInternosElec.getSize() > 0) {
                     List<String> internosElecString = new ArrayList<>(
                         IntStream.range(0, dLMInternosElec.getSize())
@@ -655,27 +658,27 @@ public class DemaisInfosView extends javax.swing.JFrame {
                         )
                         .collect(Collectors.toList());
                 }
-                List<Usuario> folgas = new ArrayList<>();
+                
                 if (dLMFolgas.getSize() > 0) {
                     List<String> folgasString = new ArrayList<>(
                         IntStream.range(0, dLMFolgas.getSize())
                             .mapToObj(dLMFolgas::getElementAt)
                             .collect(Collectors.toList())
                     );
-                    folgas = (ArrayList<Usuario>) usuarios.stream()
+                    folgasList = (ArrayList<Usuario>) usuarios.stream()
                         .filter(usuario -> folgasString.stream()
                             .anyMatch(nome -> nome.equals(usuario.getNomeDeGuerra()))
                         )
                         .collect(Collectors.toList());
                 }
-                List<Usuario> ferias = new ArrayList<>();
+                
                 if (dLMFerias.getSize() > 0) {
                     List<String> feriasString = new ArrayList<>(
                         IntStream.range(0, dLMFerias.getSize())
                             .mapToObj(dLMFerias::getElementAt)
                             .collect(Collectors.toList())
                     );
-                    ferias = (ArrayList<Usuario>) usuarios.stream()
+                    feriasList = (ArrayList<Usuario>) usuarios.stream()
                         .filter(usuario -> feriasString.stream()
                             .anyMatch(nome -> nome.equals(usuario.getNomeDeGuerra()))
                         )
@@ -685,14 +688,15 @@ public class DemaisInfosView extends javax.swing.JFrame {
                 if(dLMInternosMec.getSize() > 0 || dLMInternosElec.getSize() > 0 || dLMFolgas.getSize() > 0 || dLMFerias.getSize() > 0){
                     x.setMecanicosInternos(internosMec);
                     x.setEletricistasInternos(internosElec);
-                    x.setFolgas(folgas);
-                    x.setFerias(ferias);
+                    x.setFolgas(folgasList);
+                    x.setFerias(feriasList);
                 }else{
                     JOptionPane.showMessageDialog(null, "Não é possível alterar deixando todas listas vazias! Sugiro excluir diretamente!");
                 }
                 break;
             }  
         }
+        
         List<DemaisInfos> demaisAux = new ArrayList<>(demaisInfosCadastro);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("demaisInfos.txt"))) {
             for (DemaisInfos demais : demaisAux) {
@@ -748,7 +752,6 @@ public class DemaisInfosView extends javax.swing.JFrame {
         } catch (IOException e ) {
             JOptionPane.showMessageDialog(null, "Erro ao salvar aquivo!");
         }
-        
         
     }//GEN-LAST:event_jBRemoverActionPerformed
 
@@ -917,7 +920,7 @@ public class DemaisInfosView extends javax.swing.JFrame {
     }//GEN-LAST:event_jBSubFeriasActionPerformed
 
     private void jDCDataProgramacaoPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_jDCDataProgramacaoPropertyChange
-      
+        // TODO add your handling code here:
     }//GEN-LAST:event_jDCDataProgramacaoPropertyChange
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

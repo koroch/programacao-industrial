@@ -30,11 +30,11 @@ public class CadastroCliente extends javax.swing.JFrame {
             jCBEstado.addItem(String.valueOf(estado));
         }
     }
+
+    public CadastroCliente() {}
     
     public List<Cliente> getListaAtualizadaClientes() {
-        List<Cliente> lista = new ArrayList<>(clientesCadastro);
-        lista.sort((c1, c2) -> c1.getNome().compareTo(c2.getNome()));
-        return lista;
+        return new ArrayList<>(clientesCadastro);
     }
 
     /**
@@ -262,7 +262,7 @@ public class CadastroCliente extends javax.swing.JFrame {
     }//GEN-LAST:event_jBAlterarEmpActionPerformed
 
     private void jBBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBBuscarActionPerformed
-        if(jTFNome.getText().equals("")){
+        if(jTFNome.getText().trim().equals("")){
             if(!validaNome())
             return;
         }
@@ -300,7 +300,7 @@ public class CadastroCliente extends javax.swing.JFrame {
         if(!validaNomeUnico())
             return;
         
-        Cliente cliente = new Cliente(jTFNome.getText().toUpperCase(),jTFCidade.getText().toUpperCase(),Estado.valueOf((String)jCBEstado.getSelectedItem()));
+        Cliente cliente = new Cliente(jTFNome.getText().trim().toUpperCase(),jTFCidade.getText().trim().toUpperCase(),Estado.valueOf((String)jCBEstado.getSelectedItem()));
         clientesCadastro.add(cliente);
         
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("clientes.txt", true))) {
@@ -320,7 +320,7 @@ public class CadastroCliente extends javax.swing.JFrame {
     }
     
     public boolean validaNome(){
-        if(!isStringValid(jTFNome.getText())){
+        if(!isStringValid(jTFNome.getText().trim())){
             JOptionPane.showMessageDialog(null, "Ops! Preencha o nome corretamente, pois ele é o identificador único!");
             return false;
         }
@@ -328,7 +328,7 @@ public class CadastroCliente extends javax.swing.JFrame {
     }
         
     public boolean validaCidade(){
-        if(!isStringValid(jTFCidade.getText())){
+        if(!isStringValid(jTFCidade.getText().trim())){
             JOptionPane.showMessageDialog(null, "Ops! Preencha a Cidade corretamente!");
             return false;
         }

@@ -27,8 +27,8 @@ public class Usuario {
     }
     
     public Usuario(String nome, String nomeDeGuerra, String funcao, boolean carteiraDeCarro) {
-        this.id = ultimoIdUser + 1;
         ultimoIdUser++;
+        this.id = ultimoIdUser;
         this.nome = nome;
         this.nomeDeGuerra = nomeDeGuerra;
         this.funcao = funcao;

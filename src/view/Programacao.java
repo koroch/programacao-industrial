@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package view;
 
 import com.toedter.calendar.JDateChooser;
@@ -49,6 +45,7 @@ import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
 import programacao.model.Carro;
@@ -56,9 +53,12 @@ import programacao.model.Cliente;
 import programacao.model.Estado;
 import programacao.model.Usuario;
 import javax.swing.text.MaskFormatter;
+import org.apache.http.client.CookieStore;
+import org.apache.http.impl.client.BasicCookieStore;
 import programacao.model.Bloco;
 import programacao.model.DemaisInfos;
 import programacao.model.Hotel;
+import utils.Authenticate;
 
 /**
  *
@@ -96,8 +96,15 @@ public class Programacao extends javax.swing.JFrame {
     public static int ultimoIdDemaisInfos = 0;
     
     private boolean olhoEstaClicado = false;
+    private boolean olhoEstaCarroClicado = false;
     
-    public Programacao() {
+    private CookieStore cookieStore = new BasicCookieStore();
+    private ManutencaoGPSView manutencao = null; 
+    
+    private GerenciamentoHorasEKms gerenciamentoHorasEKms = null;
+    
+    public Programacao() throws Exception {
+        
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         Dimension screenSize = toolkit.getScreenSize();
 
@@ -128,11 +135,15 @@ public class Programacao extends javax.swing.JFrame {
             UIManager.put("Button.foreground", Color.BLACK);
             UIManager.put("TextField.background", Color.WHITE);
             UIManager.put("TextField.foreground", Color.BLACK);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | UnsupportedLookAndFeelException e) {
         }
 
         initComponents();
+        Authenticate auth = new Authenticate();
+        
+        CookieStore cookieStoreLocal = auth.authenticate();
+        this.cookieStore = cookieStoreLocal;
+        
         jLbAlertVermelho.setVisible(false);
         jLbAlertaLaranja.setVisible(false);
         jLbVermelho.setVisible(false);
@@ -164,6 +175,7 @@ public class Programacao extends javax.swing.JFrame {
         ImageIcon icone = new ImageIcon(getClass().getResource("/images/olho-fechado.png"));
         Image imagemRedimensionada = icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
         jBOlho.setIcon(new ImageIcon(imagemRedimensionada));
+        jBOlhoCarro.setIcon(new ImageIcon(imagemRedimensionada));
         
         jBAddRespOutro.setEnabled(false);
         jBAddRespOutro.setVisible(false);
@@ -171,6 +183,8 @@ public class Programacao extends javax.swing.JFrame {
         jTFRespOutro.setVisible(false);
         jCBCarroExtra.setEnabled(false);
         jCBCarroExtra.setVisible(false);
+        jCBCarroExtra.removeAllItems();
+        jLCarro1.setVisible(false);
         dataSalva = jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate());
         
         DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.US);
@@ -239,7 +253,10 @@ public class Programacao extends javax.swing.JFrame {
                         (qtdArray >= 6 && dados[5].trim() != null && !dados[5].trim().isEmpty() ? Integer.parseInt(dados[5].trim()) : null),
                         (qtdArray >= 7 ? dados[6].trim() : null),
                         (qtdArray >= 8 && dados[7].trim() != null && !dados[7].trim().isEmpty() ? Integer.parseInt(dados[7].trim()) : null),
-                        (qtdArray >= 9 ? dados[8].trim() : null)
+                        (qtdArray >= 9 ? dados[8].trim() : null),
+                        (qtdArray >= 10 ? Integer.parseInt(dados[9].trim()) : null),
+                        (qtdArray >= 11 && dados[10].trim() != null && !dados[5].trim().isEmpty() ? Integer.parseInt(dados[5].trim()) : null),
+                        (qtdArray >= 12 ? dados[11].trim() : null)
                 ));
             });
 
@@ -263,11 +280,13 @@ public class Programacao extends javax.swing.JFrame {
 
             linhasArquivoCliente.forEach(elemento -> {
                 String[] dados = elemento.split("\\|");
+                int qtdArray = dados.length;
                 clientes.add(new Cliente(
                         Integer.parseInt(dados[0].trim()),
                         dados[1].trim(),
                         dados[2].trim(),
-                        Estado.valueOf(dados[3].trim())
+                        Estado.valueOf(dados[3].trim()),
+                        (qtdArray >= 5? Double.parseDouble(dados[4].trim()) : null)
                 ));
 
             });
@@ -325,7 +344,7 @@ public class Programacao extends javax.swing.JFrame {
                     String[] dados4Array = dados[5].trim().replace("[", "").replace("]", "").split(",");
                     Usuario usuarioHelper = new Usuario();
                     List<Usuario> listaDaEquipe = Arrays.stream(dados4Array)
-                            .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
+                            .map(idStr -> Integer.valueOf(idStr)) // Converte cada String para int
                             .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
                             .collect(Collectors.toList());
                     int qtdArray = dados.length;
@@ -361,19 +380,19 @@ public class Programacao extends javax.swing.JFrame {
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Erro no arquivo blocos.txt, talvez ele ainda esteja vazio!");
         }
-        
         atualizarDemaisInfos();
+        manutencao = new ManutencaoGPSView(carros, this.cookieStore);
+        //manutencao.executa();
         agendarChamada();
+        gerenciamentoHorasEKms = new GerenciamentoHorasEKms(carros, blocos, clientes, cookieStore);
     }
     
-    public void agendarChamada() {
+    private void agendarChamada() {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        ManutencaoView manutencao = new ManutencaoView(carros);
-        
         // Agendar a execução da função a cada 30 segundos
         scheduler.scheduleAtFixedRate(() -> {
             if(manutencao.getQtdAletasVermelho(carros) > 0){
-                jLbAlertVermelho.setText("Atenção, faça troca de óleo!");
+                jLbAlertVermelho.setText("GPS - Atenção, faça troca de óleo!");
                 jLbAlertVermelho.setVisible(true);
                 jLbVermelho.setVisible(true);
             } else {
@@ -382,7 +401,7 @@ public class Programacao extends javax.swing.JFrame {
             }
             
             if( manutencao.getQtdAletasLaranja(carros) > 0) {
-                jLbAlertLaranja.setText("Revise o óleo dos carros!");
+                jLbAlertLaranja.setText("GPS - Revise o óleo dos carros!");
                 jLbAlertLaranja.setVisible(true);
                 jLbAlertaLaranja.setVisible(true);
             } else {
@@ -422,11 +441,10 @@ public class Programacao extends javax.swing.JFrame {
 
             jPFundo.setBounds(x, currentY, panelWidth, jPFundo.getHeight()); // Atualiza apenas a posição horizontal
             jPFundo.revalidate();
-            jPFundo.repaint();
-        
+            jPFundo.repaint();  
     }
 
-     private void ajustarImagemDeFundo() {
+    private void ajustarImagemDeFundo() {
         if (this.getWidth() > 0 && this.getHeight() > 0) {
             // Obtém o ícone configurado manualmente
             ImageIcon originalIcon = (ImageIcon) jLFundo.getIcon();
@@ -447,15 +465,6 @@ public class Programacao extends javax.swing.JFrame {
         }
     }
     
-    private void configurarImagemDeFundo() {
-        // Configura o JLabel com a imagem configurada na propriedade "icon"
-        if (jLFundo.getIcon() != null) {
-            ajustarImagemDeFundo();  // Ajuste inicial da imagem de fundo
-        } else {
-            System.out.println("Erro: Nenhum ícone configurado no JLabel.");
-        }
-    }
-
     private void atualizarDemaisInfos() {
         try (BufferedReader br = new BufferedReader(new FileReader("demaisInfos.txt"))) {
             String linha;
@@ -494,12 +503,11 @@ public class Programacao extends javax.swing.JFrame {
         }
         String[] dadosUsers = dado.replace("[", "").replace("]", "").split(",");
         List<Usuario> users = Arrays.stream(dadosUsers)
-                .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
+                .map(idStr -> Integer.valueOf(idStr)) // Converte cada String para int
                 .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
                 .collect(Collectors.toList());
         return users;
     }
-
     
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -568,6 +576,8 @@ public class Programacao extends javax.swing.JFrame {
         jLbVermelho = new javax.swing.JLabel();
         jLbAlertVermelho = new javax.swing.JLabel();
         jLbAlertLaranja = new javax.swing.JLabel();
+        jLCarro1 = new javax.swing.JLabel();
+        jBOlhoCarro = new javax.swing.JButton();
         jLFundo = new javax.swing.JLabel();
         jMenuBar = new javax.swing.JMenuBar();
         jMCadastros = new javax.swing.JMenu();
@@ -580,6 +590,9 @@ public class Programacao extends javax.swing.JFrame {
         jMIFolgasInternos = new javax.swing.JMenuItem();
         Manutencao = new javax.swing.JMenu();
         jMenuItemManutencao = new javax.swing.JMenuItem();
+        jMIAcViajensLancadas = new javax.swing.JMenuItem();
+        jMGerenciamento = new javax.swing.JMenu();
+        jMIHrsKM = new javax.swing.JMenuItem();
         jMSobre = new javax.swing.JMenu();
         jMIVerDetalhes = new javax.swing.JMenuItem();
 
@@ -642,7 +655,7 @@ public class Programacao extends javax.swing.JFrame {
         jLCliente.setText("Cliente:");
         jLCliente.setToolTipText("");
         jPFundo.add(jLCliente);
-        jLCliente.setBounds(610, 100, 110, 14);
+        jLCliente.setBounds(610, 90, 110, 14);
 
         jCBHospedagem.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "N/A" }));
         jCBHospedagem.setToolTipText("Selecione o Hotel, caso precise");
@@ -722,14 +735,14 @@ public class Programacao extends javax.swing.JFrame {
         jLResponsavel.setText("Selecione o Responsável da Obra:");
         jLResponsavel.setToolTipText("");
         jPFundo.add(jLResponsavel);
-        jLResponsavel.setBounds(610, 180, 160, 14);
+        jLResponsavel.setBounds(610, 150, 160, 14);
 
         jLCarro.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLCarro.setForeground(new java.awt.Color(255, 255, 255));
         jLCarro.setText("Selecione o Carro:");
         jLCarro.setToolTipText("");
         jPFundo.add(jLCarro);
-        jLCarro.setBounds(820, 100, 160, 14);
+        jLCarro.setBounds(820, 90, 130, 14);
 
         jCBCarro.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "N/A" }));
         jCBCarro.setToolTipText("Selecione o carro, caso precise");
@@ -740,7 +753,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jPFundo.add(jCBCarro);
-        jCBCarro.setBounds(820, 120, 180, 30);
+        jCBCarro.setBounds(820, 110, 180, 30);
 
         jBAddBloco.setBackground(new java.awt.Color(204, 204, 204));
         jBAddBloco.setText("Criar");
@@ -1008,7 +1021,7 @@ public class Programacao extends javax.swing.JFrame {
         jCBCliente.setBorder(null);
         jCBCliente.setNextFocusableComponent(jCBResponsavel);
         jPFundo.add(jCBCliente);
-        jCBCliente.setBounds(610, 120, 180, 30);
+        jCBCliente.setBounds(610, 110, 180, 30);
 
         jDCDataRetorno.setToolTipText("Dia/Mês/Ano");
         jDCDataRetorno.setDate(new java.util.Date(new java.util.Date().getTime() + 86400000L));
@@ -1043,7 +1056,7 @@ public class Programacao extends javax.swing.JFrame {
         jPFundo.add(jLProgramDia);
         jLProgramDia.setBounds(160, 20, 210, 14);
 
-        jCBFinalidade.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE", "OCULTAR", "ADEQUAÇÃO NR-12", "ELÉTRICA", "MECÂNICA", "LEVANTAMENTO TÉCNICO", "SPDA", "PASSAGEM DE TRABALHO", "VISITA COMERCIAL" }));
+        jCBFinalidade.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SELECIONE", "OCULTAR", "H.H.", "ADEQUAÇÃO NR-12", "ELÉTRICA", "MECÂNICA", "LEVANTAMENTO TÉCNICO", "SPDA", "PASSAGEM DE TRABALHO", "VISITA COMERCIAL", "VISITA TÉCNICA" }));
         jCBFinalidade.setToolTipText("Selecione a finalidade do bloco");
         jCBFinalidade.setNextFocusableComponent(jFTFNumero);
         jPFundo.add(jCBFinalidade);
@@ -1059,15 +1072,20 @@ public class Programacao extends javax.swing.JFrame {
         jCBCarretao.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "N/A", "CARRETÃO GRANDE", "CARRETÃO PEQUENO" }));
         jCBCarretao.setToolTipText("Selecione o carretão, caso precise");
         jCBCarretao.setNextFocusableComponent(jCBHospedagem);
+        jCBCarretao.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCBCarretaoActionPerformed(evt);
+            }
+        });
         jPFundo.add(jCBCarretao);
-        jCBCarretao.setBounds(820, 200, 180, 30);
+        jCBCarretao.setBounds(820, 170, 180, 30);
 
         jLCarretao.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jLCarretao.setForeground(new java.awt.Color(255, 255, 255));
         jLCarretao.setText("Selecione o Carretão:");
         jLCarretao.setToolTipText("");
         jPFundo.add(jLCarretao);
-        jLCarretao.setBounds(820, 180, 160, 14);
+        jLCarretao.setBounds(820, 150, 160, 14);
 
         jBDemaisInfos.setBackground(new java.awt.Color(204, 204, 204));
         jBDemaisInfos.setText("Adicionar Folgas e Internos");
@@ -1126,7 +1144,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jPFundo.add(jCBResponsavel);
-        jCBResponsavel.setBounds(610, 200, 180, 30);
+        jCBResponsavel.setBounds(610, 170, 180, 30);
 
         jTFRespOutro.setEditable(false);
         jTFRespOutro.setBackground(new java.awt.Color(204, 204, 204));
@@ -1135,7 +1153,7 @@ public class Programacao extends javax.swing.JFrame {
         jTFRespOutro.setFocusable(false);
         jTFRespOutro.setRequestFocusEnabled(false);
         jPFundo.add(jTFRespOutro);
-        jTFRespOutro.setBounds(650, 230, 140, 20);
+        jTFRespOutro.setBounds(650, 210, 140, 20);
 
         jBAddRespOutro.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jBAddRespOutro.setText(">>");
@@ -1152,7 +1170,7 @@ public class Programacao extends javax.swing.JFrame {
             }
         });
         jPFundo.add(jBAddRespOutro);
-        jBAddRespOutro.setBounds(610, 230, 30, 20);
+        jBAddRespOutro.setBounds(610, 210, 30, 20);
 
         jBOlho.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
         jBOlho.setToolTipText("Ver todos colaboradores");
@@ -1182,8 +1200,13 @@ public class Programacao extends javax.swing.JFrame {
                 jCBCarroExtraMouseClicked(evt);
             }
         });
+        jCBCarroExtra.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCBCarroExtraActionPerformed(evt);
+            }
+        });
         jPFundo.add(jCBCarroExtra);
-        jCBCarroExtra.setBounds(820, 150, 180, 30);
+        jCBCarroExtra.setBounds(820, 220, 180, 30);
 
         jLbAlertaLaranja.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/laranja.png"))); // NOI18N
         jLbAlertaLaranja.setMaximumSize(new java.awt.Dimension(50, 50));
@@ -1202,14 +1225,37 @@ public class Programacao extends javax.swing.JFrame {
         jLbAlertVermelho.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLbAlertVermelho.setText("  ");
         jPFundo.add(jLbAlertVermelho);
-        jLbAlertVermelho.setBounds(1010, 90, 160, 16);
+        jLbAlertVermelho.setBounds(970, 90, 210, 16);
 
         jLbAlertLaranja.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLbAlertLaranja.setForeground(new java.awt.Color(255, 102, 0));
         jLbAlertLaranja.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLbAlertLaranja.setText("  ");
         jPFundo.add(jLbAlertLaranja);
-        jLbAlertLaranja.setBounds(1010, 170, 160, 16);
+        jLbAlertLaranja.setBounds(1000, 170, 180, 16);
+
+        jLCarro1.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
+        jLCarro1.setForeground(new java.awt.Color(255, 255, 255));
+        jLCarro1.setText("Selecione o Carro Extra:");
+        jLCarro1.setToolTipText("");
+        jPFundo.add(jLCarro1);
+        jLCarro1.setBounds(820, 200, 160, 14);
+
+        jBOlhoCarro.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
+        jBOlhoCarro.setToolTipText("Ver todos carros");
+        jBOlhoCarro.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        jBOlhoCarro.setBorderPainted(false);
+        jBOlhoCarro.setFocusable(false);
+        jBOlhoCarro.setRequestFocusEnabled(false);
+        jBOlhoCarro.setRolloverEnabled(false);
+        jBOlhoCarro.setVerifyInputWhenFocusTarget(false);
+        jBOlhoCarro.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBOlhoCarroActionPerformed(evt);
+            }
+        });
+        jPFundo.add(jBOlhoCarro);
+        jBOlhoCarro.setBounds(960, 90, 40, 20);
 
         getContentPane().add(jPFundo);
         jPFundo.setBounds(0, 40, 1180, 580);
@@ -1230,7 +1276,6 @@ public class Programacao extends javax.swing.JFrame {
         jMCadastros.setText("Cadastros");
         jMCadastros.setAutoscrolls(true);
         jMCadastros.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        jMCadastros.setRolloverEnabled(false);
         jMCadastros.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMCadastrosActionPerformed(evt);
@@ -1294,7 +1339,7 @@ public class Programacao extends javax.swing.JFrame {
         Manutencao.setText("Manutenção");
         Manutencao.setToolTipText("");
 
-        jMenuItemManutencao.setText("Tela de Manutenção");
+        jMenuItemManutencao.setText("Acompanhamento Por GPS");
         jMenuItemManutencao.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMenuItemManutencaoActionPerformed(evt);
@@ -1302,7 +1347,27 @@ public class Programacao extends javax.swing.JFrame {
         });
         Manutencao.add(jMenuItemManutencao);
 
+        jMIAcViajensLancadas.setText("Acompanhamento Por Viajens Lançadas");
+        jMIAcViajensLancadas.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMIAcViajensLancadasActionPerformed(evt);
+            }
+        });
+        Manutencao.add(jMIAcViajensLancadas);
+
         jMenuBar.add(Manutencao);
+
+        jMGerenciamento.setText("Gerenciamento");
+
+        jMIHrsKM.setText("Horas e KM");
+        jMIHrsKM.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMIHrsKMActionPerformed(evt);
+            }
+        });
+        jMGerenciamento.add(jMIHrsKM);
+
+        jMenuBar.add(jMGerenciamento);
 
         jMSobre.setText("Sobre");
 
@@ -1323,7 +1388,6 @@ public class Programacao extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jMCadastrosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMCadastrosActionPerformed
-        // TODO add your handling code here:
     }//GEN-LAST:event_jMCadastrosActionPerformed
 
     private void jMIUsersActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIUsersActionPerformed
@@ -1407,7 +1471,7 @@ public class Programacao extends javax.swing.JFrame {
 
         CadastroHotel cadastroHotel = new CadastroHotel(hoteis);
         if (!cadastroHotel.getListaAtualizadaHoteis().isEmpty()) {
-            ultimoIdHotel = cadastroCliente.getListaAtualizadaClientes().getLast().getId();
+            ultimoIdHotel = cadastroHotel.getListaAtualizadaHoteis().getLast().getId();
             jCBHospedagem.removeAllItems();
             jCBHospedagem.addItem("N/A");
             cadastroHotel.getListaAtualizadaHoteis().forEach(x -> {
@@ -1417,7 +1481,7 @@ public class Programacao extends javax.swing.JFrame {
 
         CadastroCarro cadastroCarro = new CadastroCarro(carros);
         if (!cadastroCarro.getListaAtualizadaCarros().isEmpty()) {
-            ultimoIdCliente = cadastroCarro.getListaAtualizadaCarros().getLast().getId();
+            ultimoIdCarro = cadastroCarro.getListaAtualizadaCarros().getLast().getId();
             jCBCarro.removeAllItems();
             jCBCarro.addItem("N/A");
             listaDeCarrosDisponivelDoDia(jDCDataProgramacao).forEach(x -> {
@@ -1472,7 +1536,7 @@ public class Programacao extends javax.swing.JFrame {
                     String[] dados4Array = dados[5].trim().replace("[", "").replace("]", "").split(",");
                     Usuario usuarioHelper = new Usuario();
                     List<Usuario> listaDaEquipe = Arrays.stream(dados4Array)
-                            .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
+                            .map(idStr -> Integer.valueOf(idStr)) // Converte cada String para int
                             .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
                             .collect(Collectors.toList());
                     int qtdArray = dados.length;
@@ -1511,14 +1575,12 @@ public class Programacao extends javax.swing.JFrame {
             .map(Carro::getNome)
             .collect(Collectors.toList());
 
-        List<String> nomesNaoExistente = (List<String>) carrossAtt.stream()
-            .filter(u -> !carrosExistenteBlocosAtt.contains(u.getNome()) 
-                && !carrosExistenteBlocosAtt.contains(u.getNome()))
-            .map(Carro::getNome)
-            .sorted()
-            .collect(Collectors.toList());
-        
-        return nomesNaoExistente;
+        return (List<String>) carrossAtt.stream()
+                .filter(u -> !carrosExistenteBlocosAtt.contains(u.getNome())
+                        && !carrosExistenteBlocosAtt.contains(u.getNome()))
+                .map(Carro::getNome)
+                .sorted()
+                .collect(Collectors.toList());
     }
     
     private List<String> listaDisponivelDoDia(JDateChooser data) {
@@ -1567,7 +1629,7 @@ public class Programacao extends javax.swing.JFrame {
                     String[] dados4Array = dados[5].trim().replace("[", "").replace("]", "").split(",");
                     Usuario usuarioHelper = new Usuario();
                     List<Usuario> listaDaEquipe = Arrays.stream(dados4Array)
-                            .map(idStr -> Integer.parseInt(idStr)) // Converte cada String para int
+                            .map(idStr -> Integer.valueOf(idStr)) // Converte cada String para int
                             .map(id -> usuarioHelper.getById(id, usuarios)) // Busca o nome do usuário pelo ID
                             .collect(Collectors.toList());
                     int qtdArray = dados.length;
@@ -1664,16 +1726,18 @@ public class Programacao extends javax.swing.JFrame {
 
     private void jBAddBlocoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBAddBlocoActionPerformed
         // Obtenha as datas inicial e final
+        Date programacaoData = jDCDataProgramacao.getDate();
         Date dataInicial = jDCDataSaida.getDate();
         Date dataFinal = jDCDataRetorno.getDate();
-
+        
         // Converta para LocalDate
+        java.time.LocalDate localDateProg = programacaoData.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         java.time.LocalDate localDateSaida = dataInicial.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         java.time.LocalDate localDateRetorno = dataFinal.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
         // Calcule a diferença em dias
         long diferencaDias = ChronoUnit.DAYS.between(localDateSaida, localDateRetorno);
-
+ 
         String[] options = {"Sim", "Não, cancelar!"};
         
         listaDisponivelDoDia(jDCDataProgramacao);
@@ -1701,11 +1765,11 @@ public class Programacao extends javax.swing.JFrame {
         }
         
 
-        if ((jDCDataProgramacao.getDate() != null && String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !String.valueOf(jCBCarro.getSelectedItem()).equals("N/A"))
-            || (jDCDataProgramacao.getDate() != null && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !jFTFNumero.getText().equals(""))
-            || (("OCULTAR".equals(String.valueOf(jCBFinalidade.getSelectedItem())) || "PASSAGEM DE TRABALHO".equals(String.valueOf(jCBFinalidade.getSelectedItem()))) && (projeto.equals("") || projeto.isEmpty()))) {
+        if ((jDCDataProgramacao.getDate() != null && String.valueOf(jCBFinalidade.getSelectedItem()).contains("VISITA ") && !String.valueOf(jCBCarro.getSelectedItem()).equals("N/A"))
+            || (jDCDataProgramacao.getDate() != null && !String.valueOf(jCBFinalidade.getSelectedItem()).contains("VISITA ") && !jFTFNumero.getText().equals(""))
+            || ((("OCULTAR".equals(String.valueOf(jCBFinalidade.getSelectedItem())) || "H.H.".equals(String.valueOf(jCBFinalidade.getSelectedItem()))) || "PASSAGEM DE TRABALHO".equals(String.valueOf(jCBFinalidade.getSelectedItem()))) && (projeto.equals("") || projeto.isEmpty()))) {
             
-            if(!String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && jCBCliente.getSelectedItem().equals("N/A")){
+            if(!String.valueOf(jCBFinalidade.getSelectedItem()).contains("VISITA ") && jCBCliente.getSelectedItem().equals("N/A")){
                 JOptionPane.showMessageDialog(null, "Selecione um cliente válido ou mude a finalidade para VISITA COMERCIAL!", "Atenção", JOptionPane.WARNING_MESSAGE);
                 return;
             }
@@ -1722,14 +1786,13 @@ public class Programacao extends javax.swing.JFrame {
                     options[0] // Botão padrão selecionado
                 );
 
-
                 if(escolha != 0){
                     return;
                 }
             }
             
             for (Bloco x : blocos) {
-                if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)) {
+                if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().contains("VISITA ") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && (x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && !x.getFinalidade().contains("VISITA ")) && x.getProjeto().equals(projeto)) {
                     JOptionPane.showMessageDialog(null, "Já há salvo um bloco com esses dados principais. Altere-o em vez de criar um novo!", "Atenção", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
@@ -1750,14 +1813,21 @@ public class Programacao extends javax.swing.JFrame {
             calendarioFinal.set(Calendar.SECOND, 0);
             calendarioFinal.set(Calendar.MILLISECOND, 0);
             
+            Cliente cliente = new Cliente().getByNameEmpresa(String.valueOf(jCBCliente.getSelectedItem()), clientes);
+            if(cliente != null){
+                if((!jCBRetornaMesmoDia.isSelected())&&(jCBHospedagem.getSelectedItem().toString().equals("N/A")&&(cliente.getDistanciaEmKm()>70) && (ChronoUnit.DAYS.between(localDateProg, localDateRetorno) >= 1))){
+                    JOptionPane.showMessageDialog(null, "Sargento, selecione o Hotel! Se não tiver, cadastre ele, por favor!");
+                    return;
+                }
+            }
+            
             while (calendario.getTime().before(calendarioFinal.getTime()) || calendario.getTime().equals(calendarioFinal.getTime())) {
                 String dataProgramacao = new SimpleDateFormat("dd/MM/yyyy").format(calendario.getTime());
                 if (comparaData(jDCDataProgramacao)) {
                     return;
                 }
-                Cliente cliente = new Cliente().getByNameEmpresa(String.valueOf(jCBCliente.getSelectedItem()), clientes);
                 String finalidade = String.valueOf(jCBFinalidade.getSelectedItem());
-                if (cliente == null && !finalidade.equals("VISITA COMERCIAL")) {
+                if (cliente == null && !finalidade.contains("VISITA ")) {
                     JOptionPane.showMessageDialog(null, "Selecione um cliente! Caso seja Visita Comercial, mude a 'Finalidade'!", "Atenção", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
@@ -1788,7 +1858,7 @@ public class Programacao extends javax.swing.JFrame {
                 String nomeResponsavel = String.valueOf(jCBResponsavel.getSelectedItem()).equals("OUTRO") ? jTFRespOutro.getText() : String.valueOf(jCBResponsavel.getSelectedItem());
                 Usuario responsavel = new Usuario().getByNameDeGuerra(nomeResponsavel, usuarios);
 
-                responsavel = finalidade.equals("VISITA COMERCIAL") ? null : responsavel; 
+                responsavel = finalidade.contains("VISITA ") ? null : responsavel; 
 
                 checagemCarteira();
 
@@ -1816,7 +1886,7 @@ public class Programacao extends javax.swing.JFrame {
                     return;
                 }
                 String horaSaida = jFTFHoraSaida.getText();
-                if (dataProgramacao.equals("") || dataSaida.equals("") || dataRetorno.equals("") || horaSaida.equals("")) {
+                if (dataProgramacao.trim().equals("") || dataSaida.trim().equals("") || dataRetorno.trim().equals("") || horaSaida.trim().equals("")) {
                     JOptionPane.showMessageDialog(null, "Preencha corretamente todas datas e hora de saída!", "Atenção", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
@@ -1833,8 +1903,9 @@ public class Programacao extends javax.swing.JFrame {
                 String carroExtra = String.valueOf(jCBCarroExtra.getSelectedItem()) != null? String.valueOf(jCBCarroExtra.getSelectedItem()) : null;
                 String observacoes = jTFObservacoes.getText().equals("") ? null : jTFObservacoes.getText().trim().toUpperCase();
                 String nomesColabs = "", blocoSalvar = "";
+                boolean voltaMesmoDia = jCBRetornaMesmoDia.isSelected();
                 Bloco bloco = null;
-                if(jCBRetornaMesmoDia.isSelected()){
+                if(voltaMesmoDia){
                     bloco = new Bloco(dataProgramacao, projeto, cliente, finalidade, equipe, responsavel, carro, carretao, dataProgramacao, dataProgramacao, horaSaida, horaManhaInicio, horaManhaFim, horaTardeInicio, horaTardeFim, almoco, janta, hotel, observacoes, carroExtra);
                     blocos.add(bloco);
                     nomesColabs = bloco.getEquipe().stream().map(usuario -> String.valueOf(usuario.getId())).collect(Collectors.joining(","));
@@ -1888,8 +1959,6 @@ public class Programacao extends javax.swing.JFrame {
             }
             return;
         }
-        
-        
         alteracaoPorData();
     }//GEN-LAST:event_jBAlterarBlocoActionPerformed
 
@@ -1909,7 +1978,7 @@ public class Programacao extends javax.swing.JFrame {
             String dataAtualStr = dataAtual.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
             for (Bloco x : blocos) {
-                if ((x.getDataProgramacao().contains(dataAtualStr) && (x.getFinalidade().equals("VISITA COMERCIAL") || x.getFinalidade().equals("PASSAGEM DE TRABALHO")) && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) ||
+                if ((x.getDataProgramacao().contains(dataAtualStr) && (x.getFinalidade().contains("VISITA ") || x.getFinalidade().equals("PASSAGEM DE TRABALHO")) && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) ||
                     (x.getDataProgramacao().contains(dataAtualStr) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto))) {
 
                     exists = true;
@@ -1930,7 +1999,7 @@ public class Programacao extends javax.swing.JFrame {
                     Cliente cliente = new Cliente().getByNameEmpresa(String.valueOf(jCBCliente.getSelectedItem()), clientes);
                     x.setCliente(cliente);
                     String finalidade = String.valueOf(jCBFinalidade.getSelectedItem());
-                    if (cliente == null && !finalidade.equals("VISITA COMERCIAL")) {
+                    if (cliente == null && !finalidade.contains("VISITA ")) {
                         JOptionPane.showMessageDialog(null, "Selecione um cliente! Caso seja Visita Comercial, mude a 'Finalidade'!", "Atenção", JOptionPane.WARNING_MESSAGE);
                         return;
                     }
@@ -1939,7 +2008,7 @@ public class Programacao extends javax.swing.JFrame {
                         x.setEquipe(equipe);
                         String nomeResponsavel = String.valueOf(jCBResponsavel.getSelectedItem()).equals("OUTRO") ? jTFRespOutro.getText() : String.valueOf(jCBResponsavel.getSelectedItem());
                         responsavel = new Usuario().getByNameDeGuerra(nomeResponsavel, usuarios);
-                        responsavel = finalidade.equals("VISITA COMERCIAL") ? null : responsavel;
+                        responsavel = finalidade.contains("VISITA ") ? null : responsavel;
                         x.setResponsavelDoTrabalho(responsavel);
 
                     } else {
@@ -2033,7 +2102,7 @@ public class Programacao extends javax.swing.JFrame {
         }
         String projeto = jFTFNumero.getText().equals("") ? null : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
         for (Bloco x : blocos) {
-            if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && (x.getFinalidade().equals("VISITA COMERCIAL")||x.getFinalidade().equals("PASSAGEM DE TRABALHO")||x.getFinalidade().equals("OCULTAR")) && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)) {
+            if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && (x.getFinalidade().contains("VISITA ")||x.getFinalidade().equals("PASSAGEM DE TRABALHO")||(x.getFinalidade().equals("OCULTAR") || x.getFinalidade().equals("H.H."))) && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto)) {
                 exists = true;
                 List<Usuario> equipe = new ArrayList<>();
                 if (modeloSelec.getSize() > 0) {
@@ -2052,7 +2121,7 @@ public class Programacao extends javax.swing.JFrame {
                 Cliente cliente = new Cliente().getByNameEmpresa(String.valueOf(jCBCliente.getSelectedItem()), clientes);
                 x.setCliente(cliente);
                 String finalidade = String.valueOf(jCBFinalidade.getSelectedItem());
-                if (cliente == null && !finalidade.equals("VISITA COMERCIAL")) {
+                if (cliente == null && !finalidade.contains("VISITA ")) {
                     JOptionPane.showMessageDialog(null, "Selecione um cliente! Caso seja Visita Comercial, mude a 'Finalidade'!", "Atenção", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
@@ -2061,7 +2130,7 @@ public class Programacao extends javax.swing.JFrame {
                     x.setEquipe(equipe);
                     String nomeResponsavel = String.valueOf(jCBResponsavel.getSelectedItem()).equals("OUTRO") ? jTFRespOutro.getText() : String.valueOf(jCBResponsavel.getSelectedItem());
                     responsavel = new Usuario().getByNameDeGuerra(nomeResponsavel, usuarios);
-                    responsavel = finalidade.equals("VISITA COMERCIAL") ? null : responsavel; 
+                    responsavel = finalidade.contains("VISITA ") ? null : responsavel; 
                     x.setResponsavelDoTrabalho(responsavel);
 
                 } else {
@@ -2104,10 +2173,7 @@ public class Programacao extends javax.swing.JFrame {
                 x.setHorarioDeTrabalhoFimMeioDia(horaManhaFim);
                 x.setHorarioDeTrabalhoInicioMeioDia(horaTardeInicio);
                 x.setHorarioDeTrabalhoFim(horaTardeFim);
-                if(jCBCarroExtra.isVisible()){
-                    x.setCarroExtra(String.valueOf(jCBCarroExtra.getSelectedItem()));
-                }
-         
+                x.setCarroExtra(String.valueOf(jCBCarroExtra.getSelectedItem()));
                 
                 String observacoes = jTFObservacoes.getText().equals("") ? null : jTFObservacoes.getText().trim().toUpperCase();
                 x.setObservacoes(observacoes);
@@ -2159,7 +2225,7 @@ public class Programacao extends javax.swing.JFrame {
         String projeto = jFTFNumero.getText().equals("") ? null : jFTFNumero.getText().split("\\.")[1].equals("0") ? jFTFNumero.getText().split("\\.")[0] : jFTFNumero.getText();
         List<Bloco> auxBlocos = new ArrayList<>(blocos);
         for (Bloco x : auxBlocos) {
-            if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals("") && x.getCarro().getNome().equals(String.valueOf(jCBCarro.getSelectedItem()))) {
+            if ((x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().contains("VISITA ") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals(projeto) || x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals(String.valueOf(jCBFinalidade.getSelectedItem())) && x.getProjeto().equals("") && x.getCarro().getNome().equals(String.valueOf(jCBCarro.getSelectedItem()))) {
                 blocos.remove(x);
                 JOptionPane.showMessageDialog(null, "Bloco de programação removido com sucesso!");
                 exists = true;
@@ -2243,6 +2309,8 @@ public class Programacao extends javax.swing.JFrame {
         jTFRespOutro.setVisible(false);
         jCBCarroExtra.setEnabled(false);
         jCBCarroExtra.setVisible(false);
+        jCBCarroExtra.removeAllItems();
+        jLCarro1.setVisible(false);
         jTFRespOutro.setText("");
         jCBResponsavel.removeAll();
     }
@@ -2262,12 +2330,10 @@ public class Programacao extends javax.swing.JFrame {
     private void habilitaCarroExtra(){
         jCBCarroExtra.setEnabled(true);
         jCBCarroExtra.setVisible(true);
+        jLCarro1.setVisible(true);
         jCBCarroExtra.removeAllItems();
-        for (int i = 0; i < jCBCarro.getItemCount(); i++) {
-            jCBCarroExtra.addItem(jCBCarro.getItemAt(i));
-        }
-        if(!String.valueOf(jCBCarro.getSelectedItem()).equals("N/A")){
-            jCBCarroExtra.removeItem((String)jCBCarro.getSelectedItem());
+        for (int i = 0; i < carros.size(); i++) {
+            jCBCarroExtra.addItem(carros.get(i).getNome());
         }
     }
     
@@ -2313,6 +2379,8 @@ public class Programacao extends javax.swing.JFrame {
         } else {
             jCBCarroExtra.setEnabled(false);
             jCBCarroExtra.setVisible(false);
+            jCBCarroExtra.removeAllItems();
+            jLCarro1.setVisible(false);
         }
     }//GEN-LAST:event_jBAddActionPerformed
 
@@ -2355,6 +2423,8 @@ public class Programacao extends javax.swing.JFrame {
         } else {
             jCBCarroExtra.setEnabled(false);
             jCBCarroExtra.setVisible(false);
+            jCBCarroExtra.removeAllItems();
+            jLCarro1.setVisible(false);
         }
     }//GEN-LAST:event_jBSubActionPerformed
 
@@ -2498,15 +2568,15 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jBBuscarMouseClicked
 
     private boolean validaSemProjeto() {
-        return !String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE") && jFTFNumero.getText().equals("") && !jCBCarro.getSelectedItem().toString().equals("N/A") && jCBCarro.getItemCount()!=0;
+        return !String.valueOf(jCBFinalidade.getSelectedItem()).contains("VISITA ") && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE") && jFTFNumero.getText().equals("") && !jCBCarro.getSelectedItem().toString().equals("N/A") && jCBCarro.getItemCount()!=0;
     }
     
     private boolean validaVisitaComercial() {
-        return (String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") || String.valueOf(jCBFinalidade.getSelectedItem()).equals("PASSAGEM DE TRABALHO")) && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE") && !String.valueOf(jCBCarro.getSelectedItem()).equals("N/A");
+        return (String.valueOf(jCBFinalidade.getSelectedItem()).contains("VISITA ") || String.valueOf(jCBFinalidade.getSelectedItem()).equals("PASSAGEM DE TRABALHO")) && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE") && !String.valueOf(jCBCarro.getSelectedItem()).equals("N/A");
     }
 
     private boolean validaOutros() {
-        return (!String.valueOf(jCBFinalidade.getSelectedItem()).equals("VISITA COMERCIAL") && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE") && !jFTFNumero.getText().equals("") && !jFTFNumero.getText().equals(".0"))|| ((String.valueOf(jCBFinalidade.getSelectedItem()).equals("PASSAGEM DE TRABALHO") || String.valueOf(jCBFinalidade.getSelectedItem()).equals("OCULTAR")) && !jFTFNumero.getText().equals(".0"));
+        return (!String.valueOf(jCBFinalidade.getSelectedItem()).contains("VISITA ") && !String.valueOf(jCBFinalidade.getSelectedItem()).equals("SELECIONE") && !jFTFNumero.getText().equals("") && !jFTFNumero.getText().equals(".0"))|| ((String.valueOf(jCBFinalidade.getSelectedItem()).equals("PASSAGEM DE TRABALHO") || (String.valueOf(jCBFinalidade.getSelectedItem()).equals("OCULTAR") || String.valueOf(jCBFinalidade.getSelectedItem()).equals("H.H."))) && !jFTFNumero.getText().equals(".0"));
     }
 
     private void jBBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBBuscarActionPerformed
@@ -2514,7 +2584,7 @@ public class Programacao extends javax.swing.JFrame {
         
         if (isVisitaComercial) {
             for (Bloco x : blocos) {
-                if (x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().equals("VISITA COMERCIAL") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) {
+                if (x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && x.getFinalidade().contains("VISITA ") && x.getCarro().getNome().contains(String.valueOf(jCBCarro.getSelectedItem()))) {
                     recuperaDados(x);
                     return;
                 }
@@ -2527,9 +2597,9 @@ public class Programacao extends javax.swing.JFrame {
                     return;
                 }
             }
-        } else if (!isVisitaComercial && (String.valueOf(jCBFinalidade.getSelectedItem()).equals("OCULTAR") || String.valueOf(jCBFinalidade.getSelectedItem()).equals("PASSAGEM DE TRABALHO")) && !String.valueOf(jCBCliente.getSelectedItem()).equals("SELECIONE")) {
+        } else if (!isVisitaComercial && ((String.valueOf(jCBFinalidade.getSelectedItem()).equals("OCULTAR")||String.valueOf(jCBFinalidade.getSelectedItem()).equals("H.H.")) || String.valueOf(jCBFinalidade.getSelectedItem()).equals("PASSAGEM DE TRABALHO")) && !String.valueOf(jCBCliente.getSelectedItem()).equals("SELECIONE")) {
             for (Bloco x : blocos) {
-                if (x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && (x.getFinalidade().equals("OCULTAR")||x.getFinalidade().equals("PASSAGEM DE TRABALHO")) && x.getCliente().getNome().equals(String.valueOf(jCBCliente.getSelectedItem()))) {
+                if (x.getDataProgramacao().contains(jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate())) && (x.getFinalidade().equals("H.H.") || x.getFinalidade().equals("OCULTAR")||x.getFinalidade().equals("PASSAGEM DE TRABALHO")) && x.getCliente().getNome().equals(String.valueOf(jCBCliente.getSelectedItem()))) {
                     recuperaDados(x);
                     return;
                 }
@@ -2655,7 +2725,6 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jCBCarroExtraMouseClicked
 
     private void jMenuItemManutencaoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemManutencaoActionPerformed
-        ManutencaoView manutencao = new ManutencaoView(carros);
         manutencao.setVisible(true);
         
         manutencao.addWindowListener(new WindowAdapter() {
@@ -2666,11 +2735,67 @@ public class Programacao extends javax.swing.JFrame {
         });
     }//GEN-LAST:event_jMenuItemManutencaoActionPerformed
 
+    private void jMIHrsKMActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIHrsKMActionPerformed
+        gerenciamentoHorasEKms.setVisible(true);
+    }//GEN-LAST:event_jMIHrsKMActionPerformed
+
+    private void jMIAcViajensLancadasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIAcViajensLancadasActionPerformed
+        ManutencaoMapsView manutMapsView = new ManutencaoMapsView(carros, blocos);
+        manutMapsView.setVisible(true);
+    }//GEN-LAST:event_jMIAcViajensLancadasActionPerformed
+
+    private void jBOlhoCarroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBOlhoCarroActionPerformed
+        if(!olhoEstaCarroClicado){
+            ImageIcon icone = new ImageIcon(getClass().getResource("/images/olho-aberto.png"));
+            Image imagemRedimensionada = icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+            jBOlhoCarro.setIcon(new ImageIcon(imagemRedimensionada));
+            olhoEstaCarroClicado = true;
+            
+            CadastroCarro cadastroCar = new CadastroCarro(carros);
+            ultimoIdCarro = cadastroCar.getListaAtualizadaCarros().getLast().getId();
+            String[] itensArray = cadastroCar.getListaAtualizadaCarros().stream().map(Carro::getNome).sorted().toArray(String[]::new);
+            List<String> itensNaoUsados = new ArrayList<>();
+            jCBCarro.removeAllItems();
+            for (String item : itensArray) {
+                if(!IntStream.range(0, jCBCarro.getItemCount())
+                    .mapToObj(jCBCarro::getItemAt)
+                    .anyMatch(nome -> nome.equals(item))){
+                        itensNaoUsados.add(item);
+                }
+            }
+            
+            for (String item : itensNaoUsados) {
+                jCBCarro.addItem(item);
+            }
+            
+        } else {
+            ImageIcon icone = new ImageIcon(getClass().getResource("/images/olho-fechado.png"));
+            Image imagemRedimensionada = icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+            jBOlhoCarro.setIcon(new ImageIcon(imagemRedimensionada));
+            olhoEstaCarroClicado = false;
+            List<String> itensArray = listaDeCarrosDisponivelDoDia(jDCDataProgramacao);
+            jCBCarro.removeAllItems();
+            jCBCarro.addItem("N/A");
+            for (String item : itensArray) {
+                jCBCarro.addItem(item);
+            }
+        }
+    }//GEN-LAST:event_jBOlhoCarroActionPerformed
+
+    private void jCBCarretaoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCBCarretaoActionPerformed
+
+    }//GEN-LAST:event_jCBCarretaoActionPerformed
+
+    private void jCBCarroExtraActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCBCarroExtraActionPerformed
+
+    }//GEN-LAST:event_jCBCarroExtraActionPerformed
+
     private void recuperaDados(Bloco x) {
         try {
-            if(x.getCarroExtra()!=null && !x.getCarroExtra().equals("")){
+            if(x.getCarroExtra()!=null && !x.getCarroExtra().equals("") && !x.getCarroExtra().equals("null")){
                 jCBCarroExtra.setVisible(true);
                 jCBCarroExtra.setEnabled(true);
+                jLCarro1.setVisible(true);
                         
                 boolean encontrado = false;
 
@@ -2690,6 +2815,8 @@ public class Programacao extends javax.swing.JFrame {
             }else{
                 jCBCarroExtra.setVisible(false);
                 jCBCarroExtra.setEnabled(false);
+                jCBCarroExtra.removeAllItems();
+                jLCarro1.setVisible(false);
             }
             
             modeloSelec.removeAllElements();
@@ -2736,6 +2863,13 @@ public class Programacao extends javax.swing.JFrame {
                 jTFRespOutro.setText(x.getResponsavelDoTrabalho().getNomeDeGuerra());
             }
             
+            if(x.getCliente().getDistanciaEmKm()<=70){
+                jCBRetornaMesmoDia.setSelected(true);
+            }else if((x.getCliente().getDistanciaEmKm()>70) && (x.getDataProgramacao().equals(x.getDataDeSaida()) && x.getDataProgramacao().equals(x.getDataDeRetorno()))){
+                jCBRetornaMesmoDia.setSelected(true);
+            }else{
+                jCBRetornaMesmoDia.setSelected(false);
+            }
             
             jCBCarretao.setSelectedItem(x.getCarretao());
             jCBHospedagem.setSelectedItem(x.getHospedagem() != null ? x.getHospedagem().getNomeComCidadeEEstado() : "");
@@ -2745,11 +2879,6 @@ public class Programacao extends javax.swing.JFrame {
             jTFJanta.setText(janta.equals("null") ? "" : janta);
             jDCDataSaida.setDate(new SimpleDateFormat("dd/MM/yyyy").parse(x.getDataDeSaida()));
             jDCDataRetorno.setDate(new SimpleDateFormat("dd/MM/yyyy").parse(x.getDataDeRetorno()));
-            if(x.getDataDeSaida().equals(x.getDataDeRetorno())){
-                jCBRetornaMesmoDia.setSelected(true);
-            }else{
-                jCBRetornaMesmoDia.setSelected(false);
-            }
             jFTFHoraSaida.setText(x.getHorarioDeSaida());
             jFTFHoraInicioManha.setText(x.getHorarioDeTrabalhoInicio());
             jFTFHoraFimManha.setText(x.getHorarioDeTrabalhoFimMeioDia());
@@ -2816,6 +2945,7 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JButton jBDemaisInfos;
     private javax.swing.JButton jBLimpar;
     private javax.swing.JButton jBOlho;
+    private javax.swing.JButton jBOlhoCarro;
     private javax.swing.JButton jBRemover;
     private javax.swing.JButton jBSub;
     private javax.swing.JComboBox<String> jCBCarretao;
@@ -2838,6 +2968,7 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JLabel jLAlmoco;
     private javax.swing.JLabel jLCarretao;
     private javax.swing.JLabel jLCarro;
+    private javax.swing.JLabel jLCarro1;
     private javax.swing.JLabel jLCliente;
     private javax.swing.JList<String> jLColab;
     private javax.swing.JLabel jLColaboradores;
@@ -2865,10 +2996,13 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JLabel jLbAlertaLaranja;
     private javax.swing.JLabel jLbVermelho;
     private javax.swing.JMenu jMCadastros;
+    private javax.swing.JMenu jMGerenciamento;
+    private javax.swing.JMenuItem jMIAcViajensLancadas;
     private javax.swing.JMenuItem jMICarros;
     private javax.swing.JMenuItem jMICliente;
     private javax.swing.JMenuItem jMIFolgasInternos;
     private javax.swing.JMenuItem jMIHoteis;
+    private javax.swing.JMenuItem jMIHrsKM;
     private javax.swing.JMenuItem jMIListaProgramacoes;
     private javax.swing.JMenuItem jMIUsers;
     private javax.swing.JMenuItem jMIVerDetalhes;

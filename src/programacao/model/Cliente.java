@@ -5,6 +5,8 @@
 package programacao.model;
 
 import java.util.List;
+import utils.RoutesGoogleMaps;
+import view.GerenciamentoHorasEKms;
 import static view.Programacao.ultimoIdCliente;
 
 /**
@@ -16,23 +18,40 @@ public class Cliente {
     private String nome;
     private String cidade;
     private Estado estado;
+    private double distanciaEmKm;
 
-    public Cliente(int id, String nome, String cidade, Estado estado) {
+    public Cliente(int id, String nome, String cidade, Estado estado, double distanciaEmKm) {
         this.id = id;
         this.nome = nome;
         this.cidade = cidade;
         this.estado = estado;
+        this.distanciaEmKm = distanciaEmKm;
     }
 
     public Cliente(String nome, String cidade, Estado estado) {
-        this.id = ultimoIdCliente + 1;
         ultimoIdCliente++;
+        this.id = ultimoIdCliente;
         this.nome = nome;
         this.cidade = cidade;
         this.estado = estado;
+
+        RoutesGoogleMaps routesGM = new RoutesGoogleMaps(
+            GerenciamentoHorasEKms.EMPRESA,
+            (nome +" | "+ cidade +" | "+ estado)
+        );
+        this.distanciaEmKm = (Math.round(routesGM.getKms() * 100.0) / 100.0);
+        
     }
 
     public Cliente() {}
+
+    public double getDistanciaEmKm() {
+        return distanciaEmKm;
+    }
+
+    public void setDistanciaEmKm(double distanciaEmKm) {
+        this.distanciaEmKm = distanciaEmKm;
+    }
     
     public Cliente getById(int id, List<Cliente> clientes){
         return clientes.stream().filter(x -> x.getId() == id).findFirst().orElse(null);
@@ -74,9 +93,17 @@ public class Cliente {
         this.estado = estado;
     }
 
+    public String getBuscaEndereco() {
+        return this.nome+", "+this.cidade+" - "+this.estado;
+    }
+    
+    public String getCidadeEEstado() {
+        return this.cidade+" - "+this.estado;
+    }
+    
     @Override
     public String toString() {
-        return this.id+"|"+this.nome+"|"+this.cidade+"|"+this.estado;
+        return this.id+"|"+this.nome+"|"+this.cidade+"|"+this.estado+"|"+this.distanciaEmKm;
     }
     
     

@@ -266,7 +266,7 @@ public class CadastroUsuario extends javax.swing.JFrame {
         if(!validaNomeWarUnico())
             return;
         
-        Usuario usuario = new Usuario(jTFNome.getText().toUpperCase(),jTFNomeWar.getText().toUpperCase(),jTFFuncao.getText().toUpperCase(),jRSim.isSelected());
+        Usuario usuario = new Usuario(jTFNome.getText().trim().toUpperCase(),jTFNomeWar.getText().trim().toUpperCase(),jTFFuncao.getText().trim().toUpperCase(),jRSim.isSelected());
         usuariosCadastro.add(usuario);
         System.out.println("User"+ usuario.toString());
         
@@ -352,7 +352,7 @@ public class CadastroUsuario extends javax.swing.JFrame {
     }
     
     public boolean validaCampos(){
-        if(jTFNome.getText().equals("") || jTFNomeWar.getText().equals("") || jTFFuncao.getText().equals("")){
+        if(jTFNome.getText().trim().equals("") || jTFNomeWar.getText().trim().equals("") || jTFFuncao.getText().trim().equals("")){
             JOptionPane.showMessageDialog(null, "Calma aí! Para adicionar, tem que preencher todos os campos!");
             return false;
         }
@@ -360,21 +360,21 @@ public class CadastroUsuario extends javax.swing.JFrame {
     }
     
     public boolean validaNome(){
-        if(!isStringValid(jTFNome.getText())){
+        if(!isStringValid(jTFNome.getText().trim())){
             JOptionPane.showMessageDialog(null, "Ops! Preencha o nome corretamente!");
             return false;
         }
         return true;
     }
     public boolean validaNomeWar(){
-        if(!isStringValid(jTFNomeWar.getText())){
+        if(!isStringValid(jTFNomeWar.getText().trim())){
             JOptionPane.showMessageDialog(null, "Ops! Preencha o nome de guerra corretamente!");
             return false;
         }
         return true;
     }
     public boolean validaFuncao(){
-        if(!isStringValid(jTFFuncao.getText())){
+        if(!isStringValid(jTFFuncao.getText().trim())){
             JOptionPane.showMessageDialog(null, "Ops! Preencha a função corretamente!");
             return false;
         }
