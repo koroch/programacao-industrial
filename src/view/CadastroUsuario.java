@@ -215,8 +215,9 @@ public class CadastroUsuario extends javax.swing.JFrame {
         for (Usuario x: aux) {
             if(x.getNomeDeGuerra().toUpperCase().equals(jTFNomeWar.getText().toUpperCase())){
                 usuariosCadastro.remove(x);
+                exists = true;
                 JOptionPane.showMessageDialog(null, "Colaborador removido com sucesso!");
-                return;
+                break;
             }
         }
         

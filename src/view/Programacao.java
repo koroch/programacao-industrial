@@ -97,8 +97,9 @@ public class Programacao extends javax.swing.JFrame {
     
     private boolean olhoEstaClicado = false;
     private boolean olhoEstaCarroClicado = false;
+    private boolean olhoEstaCarroExtraClicado = false;
     
-    private CookieStore cookieStore = new BasicCookieStore();
+    //private CookieStore cookieStore = new BasicCookieStore();
     private ManutencaoGPSView manutencao = null; 
     
     private GerenciamentoHorasEKms gerenciamentoHorasEKms = null;
@@ -141,8 +142,8 @@ public class Programacao extends javax.swing.JFrame {
         initComponents();
         Authenticate auth = new Authenticate();
         
-        CookieStore cookieStoreLocal = auth.authenticate();
-        this.cookieStore = cookieStoreLocal;
+        //CookieStore cookieStoreLocal = auth.authenticate();
+        //this.cookieStore = cookieStoreLocal;
         
         jLbAlertVermelho.setVisible(false);
         jLbAlertaLaranja.setVisible(false);
@@ -176,6 +177,7 @@ public class Programacao extends javax.swing.JFrame {
         Image imagemRedimensionada = icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
         jBOlho.setIcon(new ImageIcon(imagemRedimensionada));
         jBOlhoCarro.setIcon(new ImageIcon(imagemRedimensionada));
+        jBOlhoCarroExtra.setIcon(new ImageIcon(imagemRedimensionada));
         
         jBAddRespOutro.setEnabled(false);
         jBAddRespOutro.setVisible(false);
@@ -184,6 +186,7 @@ public class Programacao extends javax.swing.JFrame {
         jCBCarroExtra.setEnabled(false);
         jCBCarroExtra.setVisible(false);
         jCBCarroExtra.removeAllItems();
+        jBOlhoCarroExtra.setVisible(false);
         jLCarro1.setVisible(false);
         dataSalva = jDCDataProgramacao.getDate() == null ? "" : new SimpleDateFormat("dd/MM/yyyy").format(jDCDataProgramacao.getDate());
         
@@ -255,7 +258,7 @@ public class Programacao extends javax.swing.JFrame {
                         (qtdArray >= 8 && dados[7].trim() != null && !dados[7].trim().isEmpty() ? Integer.parseInt(dados[7].trim()) : null),
                         (qtdArray >= 9 ? dados[8].trim() : null),
                         (qtdArray >= 10 ? Integer.parseInt(dados[9].trim()) : null),
-                        (qtdArray >= 11 && dados[10].trim() != null && !dados[5].trim().isEmpty() ? Integer.parseInt(dados[5].trim()) : null),
+                        (qtdArray >= 11 && dados[10].trim() != null && !dados[5].trim().isEmpty() ? Integer.parseInt(dados[5].trim()) : 0),
                         (qtdArray >= 12 ? dados[11].trim() : null)
                 ));
             });
@@ -381,10 +384,10 @@ public class Programacao extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Erro no arquivo blocos.txt, talvez ele ainda esteja vazio!");
         }
         atualizarDemaisInfos();
-        manutencao = new ManutencaoGPSView(carros, this.cookieStore);
+        //manutencao = new ManutencaoGPSView(carros);
         //manutencao.executa();
         agendarChamada();
-        gerenciamentoHorasEKms = new GerenciamentoHorasEKms(carros, blocos, clientes, cookieStore);
+        //gerenciamentoHorasEKms = new GerenciamentoHorasEKms(carros, blocos, clientes);
     }
     
     private void agendarChamada() {
@@ -578,6 +581,7 @@ public class Programacao extends javax.swing.JFrame {
         jLbAlertLaranja = new javax.swing.JLabel();
         jLCarro1 = new javax.swing.JLabel();
         jBOlhoCarro = new javax.swing.JButton();
+        jBOlhoCarroExtra = new javax.swing.JButton();
         jLFundo = new javax.swing.JLabel();
         jMenuBar = new javax.swing.JMenuBar();
         jMCadastros = new javax.swing.JMenu();
@@ -1256,6 +1260,22 @@ public class Programacao extends javax.swing.JFrame {
         });
         jPFundo.add(jBOlhoCarro);
         jBOlhoCarro.setBounds(960, 90, 40, 20);
+
+        jBOlhoCarroExtra.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
+        jBOlhoCarroExtra.setToolTipText("Ver todos carros");
+        jBOlhoCarroExtra.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        jBOlhoCarroExtra.setBorderPainted(false);
+        jBOlhoCarroExtra.setFocusable(false);
+        jBOlhoCarroExtra.setRequestFocusEnabled(false);
+        jBOlhoCarroExtra.setRolloverEnabled(false);
+        jBOlhoCarroExtra.setVerifyInputWhenFocusTarget(false);
+        jBOlhoCarroExtra.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBOlhoCarroExtraActionPerformed(evt);
+            }
+        });
+        jPFundo.add(jBOlhoCarroExtra);
+        jBOlhoCarroExtra.setBounds(960, 200, 40, 20);
 
         getContentPane().add(jPFundo);
         jPFundo.setBounds(0, 40, 1180, 580);
@@ -2310,6 +2330,7 @@ public class Programacao extends javax.swing.JFrame {
         jCBCarroExtra.setEnabled(false);
         jCBCarroExtra.setVisible(false);
         jCBCarroExtra.removeAllItems();
+        jBOlhoCarroExtra.setVisible(false);
         jLCarro1.setVisible(false);
         jTFRespOutro.setText("");
         jCBResponsavel.removeAll();
@@ -2330,6 +2351,7 @@ public class Programacao extends javax.swing.JFrame {
     private void habilitaCarroExtra(){
         jCBCarroExtra.setEnabled(true);
         jCBCarroExtra.setVisible(true);
+        jBOlhoCarroExtra.setVisible(true);
         jLCarro1.setVisible(true);
         jCBCarroExtra.removeAllItems();
         for (int i = 0; i < carros.size(); i++) {
@@ -2381,6 +2403,7 @@ public class Programacao extends javax.swing.JFrame {
             jCBCarroExtra.setVisible(false);
             jCBCarroExtra.removeAllItems();
             jLCarro1.setVisible(false);
+            jBOlhoCarroExtra.setVisible(olhoEstaClicado);
         }
     }//GEN-LAST:event_jBAddActionPerformed
 
@@ -2725,23 +2748,16 @@ public class Programacao extends javax.swing.JFrame {
     }//GEN-LAST:event_jCBCarroExtraMouseClicked
 
     private void jMenuItemManutencaoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemManutencaoActionPerformed
-        manutencao.setVisible(true);
-        
-        manutencao.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                atualizarListas();
-            }
-        });
+        JOptionPane.showMessageDialog(null, "Desativado!");
     }//GEN-LAST:event_jMenuItemManutencaoActionPerformed
 
     private void jMIHrsKMActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIHrsKMActionPerformed
-        gerenciamentoHorasEKms.setVisible(true);
+        //gerenciamentoHorasEKms.setVisible(true);
+        JOptionPane.showMessageDialog(null, "Desativado!");
     }//GEN-LAST:event_jMIHrsKMActionPerformed
 
     private void jMIAcViajensLancadasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMIAcViajensLancadasActionPerformed
-        ManutencaoMapsView manutMapsView = new ManutencaoMapsView(carros, blocos);
-        manutMapsView.setVisible(true);
+        JOptionPane.showMessageDialog(null, "Desativado!");
     }//GEN-LAST:event_jMIAcViajensLancadasActionPerformed
 
     private void jBOlhoCarroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBOlhoCarroActionPerformed
@@ -2790,6 +2806,44 @@ public class Programacao extends javax.swing.JFrame {
 
     }//GEN-LAST:event_jCBCarroExtraActionPerformed
 
+    private void jBOlhoCarroExtraActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBOlhoCarroExtraActionPerformed
+        if(!olhoEstaCarroExtraClicado){
+            ImageIcon icone = new ImageIcon(getClass().getResource("/images/olho-aberto.png"));
+            Image imagemRedimensionada = icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+            jBOlhoCarroExtra.setIcon(new ImageIcon(imagemRedimensionada));
+            olhoEstaCarroExtraClicado = true;
+            
+            CadastroCarro cadastroCar = new CadastroCarro(carros);
+            ultimoIdCarro = cadastroCar.getListaAtualizadaCarros().getLast().getId();
+            String[] itensArray = cadastroCar.getListaAtualizadaCarros().stream().map(Carro::getNome).sorted().toArray(String[]::new);
+            List<String> itensNaoUsados = new ArrayList<>();
+            jCBCarroExtra.removeAllItems();
+            for (String item : itensArray) {
+                if(!IntStream.range(0, jCBCarroExtra.getItemCount())
+                    .mapToObj(jCBCarroExtra::getItemAt)
+                    .anyMatch(nome -> nome.equals(item))){
+                        itensNaoUsados.add(item);
+                }
+            }
+            
+            for (String item : itensNaoUsados) {
+                jCBCarroExtra.addItem(item);
+            }
+            
+        } else {
+            ImageIcon icone = new ImageIcon(getClass().getResource("/images/olho-fechado.png"));
+            Image imagemRedimensionada = icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+            jBOlhoCarroExtra.setIcon(new ImageIcon(imagemRedimensionada));
+            olhoEstaCarroExtraClicado = false;
+            List<String> itensArray = listaDeCarrosDisponivelDoDia(jDCDataProgramacao);
+            jCBCarroExtra.removeAllItems();
+            jCBCarroExtra.addItem("N/A");
+            for (String item : itensArray) {
+                jCBCarroExtra.addItem(item);
+            }
+        }
+    }//GEN-LAST:event_jBOlhoCarroExtraActionPerformed
+
     private void recuperaDados(Bloco x) {
         try {
             if(x.getCarroExtra()!=null && !x.getCarroExtra().equals("") && !x.getCarroExtra().equals("null")){
@@ -2817,6 +2871,7 @@ public class Programacao extends javax.swing.JFrame {
                 jCBCarroExtra.setEnabled(false);
                 jCBCarroExtra.removeAllItems();
                 jLCarro1.setVisible(false);
+                jBOlhoCarroExtra.setVisible(false);
             }
             
             modeloSelec.removeAllElements();
@@ -2946,6 +3001,7 @@ public class Programacao extends javax.swing.JFrame {
     private javax.swing.JButton jBLimpar;
     private javax.swing.JButton jBOlho;
     private javax.swing.JButton jBOlhoCarro;
+    private javax.swing.JButton jBOlhoCarroExtra;
     private javax.swing.JButton jBRemover;
     private javax.swing.JButton jBSub;
     private javax.swing.JComboBox<String> jCBCarretao;

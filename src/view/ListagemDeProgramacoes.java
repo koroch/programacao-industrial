@@ -540,14 +540,30 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
     private void jCalendar1PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_jCalendar1PropertyChange
         Date selectedDate = jCalendar1.getDate();
 
+        Calendar calendarNovo = Calendar.getInstance();
+            calendarNovo.setTime(selectedDate);
+            //calendarNovo.set(Calendar.MONTH, 1); // Fixa o mês em fevereiro (2)
+            Date dataComMesFixo = calendarNovo.getTime();
+        
+
+            boolean ehFevereiro = isFevereiro(selectedDate);
+            System.out.println("ehFevereiro "+ehFevereiro);
+            if(ehFevereiro){
+                Calendar calendarNovo1 = Calendar.getInstance();
+                calendarNovo1.setTime(selectedDate);
+                calendarNovo1.set(Calendar.MONTH, 1); // Fixa o mês em fevereiro (2)
+                dataComMesFixo = calendarNovo1.getTime();
+            }
+            
+        
         // Se for a primeira data a ser selecionada
         if (firstClickDate == null) {
-            firstClickDate = selectedDate;
+            firstClickDate = dataComMesFixo;
             jLbCalendar.setText("Selecione a segunda data.");
         } 
         // Se for a segunda data a ser selecionada
         else if (secondClickDate == null) {
-            secondClickDate = selectedDate;
+            secondClickDate = dataComMesFixo;
 
             // Verificar se as datas estão na ordem correta
             if (firstClickDate.after(secondClickDate)) {
@@ -569,6 +585,18 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jCalendar1PropertyChange
 
+    
+    private boolean isFevereiro(Date data) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(data);
+        int diasDoMes = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+        if (diasDoMes <= 29) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
     private void processInterval(Date firstDate, Date secondDate) {
         if (firstDate == null || secondDate == null) {
             return;
@@ -612,7 +640,7 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
         jPCalendar.setEnabled(false);
         jLbCalendar.setVisible(false);
         jLbCalendar.setEnabled(false);
-        
+
         if (firstClickDate != null && secondClickDate != null) {
             if (firstClickDate.after(secondClickDate)) {
                 Date temp = firstClickDate;
@@ -620,26 +648,29 @@ public class ListagemDeProgramacoes extends javax.swing.JFrame {
                 secondClickDate = temp;
             }
 
-            // Formatar as datas no padrão dd/MM/yyyy
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-
-            // Calendar para iterar pelas datas
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(firstClickDate);
-            
+
             DefaultTableModel model = (DefaultTableModel) jTProgramação.getModel();
-            model.setRowCount(0); // Limpa as linhas antes de adicionar novas
+            model.setRowCount(0);
+
             // Loop para percorrer todas as datas entre firstClickDate e secondClickDate
             while (!calendar.getTime().after(secondClickDate)) {
-                // Formatar a data atual e passá-la para o populateTable
+                // Formatar a data e adicionar à tabela
                 String dataFormatada = sdf.format(calendar.getTime());
-                populateTable(dataFormatada,model);  // Passando a data formatada individualmente
+                populateTable(dataFormatada, model);
 
                 // Avançar para o próximo dia
                 calendar.add(Calendar.DAY_OF_MONTH, 1);
+
+                // Correção específica para evitar que março volte para fevereiro
+                if (calendar.get(Calendar.MONTH) == Calendar.MARCH && calendar.get(Calendar.DAY_OF_MONTH) == 1) {
+                    // Apenas garante que o mês não seja alterado incorretamente
+                    calendar.set(Calendar.MONTH, Calendar.MARCH);
+                }
             }
         } else {
-            // Caso as datas não estejam selecionadas corretamente
             JOptionPane.showMessageDialog(this, "Selecione corretamente o intervalo de datas.");
         }
     }//GEN-LAST:event_jBtEnviarRangeActionPerformed
